@@ -1,0 +1,79 @@
+const mongoose = require('mongoose');
+const Event = require('./models/EventSchema'); // Connect to EventSchema
+
+function generateTheatreUUID(eventDate) {
+  const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY
+  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase(); // 7-character UID
+  return `T-${dateFormatted}-${randomCode}`;
+}
+
+TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
+TheatreSchema.index({ seats.seatNumber: 1 }); // Optimize seat lookups
+
+
+const TheatreSchema = new mongoose.Schema({
+  theatreUUID: { type: String, unique: true },
+  eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // Connect to EventSchema
+  name: { type: String, required: true },
+  date: { type: Date, required: true },
+  startTime: { type: Date, required: true }, // Added startTime to ensure uniqueness
+  genre: { type: String, required: true },
+  director: { type: String, required: true },
+  cast: [{ type: String, required: true }],
+  posterImage: { type: String },
+  runtime: { type: Number, required: true },
+  theatreAddress: { type: String, required: true },
+
+  seats: [{
+    seatNumber: { type: String, required: true },
+    isBought: { type: Boolean, default: false },
+    ticketNumber: { type: String, ref: 'Ticket' }
+  }],
+
+  reviews: [{
+    reviewer: { type: String, required: true },
+    rating: { type: Number, min: 1, max: 5, required: true },
+    review: { type: String },
+    reviewDate: { type: Date, default: Date.now }
+  }],
+
+  isActive: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false }
+}, { timestamps: true });
+
+// **Pre-Save Hook to Ensure Unique Event Entries**
+TheatreSchema.pre('save', async function (next) {
+  if (!this.theatreUUID) {
+    this.theatreUUID = generateTheatreUUID(this.date);
+  }
+
+  if (!this.eventReference) {
+    try {
+      const existingEvent = await Event.findOne({
+        name: this.name,
+        type: "Theatre",
+        eventDate: this.date,
+        startTime: this.startTime
+      });
+
+      if (existingEvent) {
+        this.eventReference = existingEvent._id;
+      } else {
+        const event = await Event.create({
+          name: this.name,
+          type: "Theatre",
+          eventDate: this.date,
+          startTime: this.startTime,
+          linkedEvent: this._id
+        });
+        this.eventReference = event._id;
+      }
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  next();
+});
+
+module.exports = mongoose.model('Theatre', TheatreSchema);

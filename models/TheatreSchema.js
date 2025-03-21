@@ -1,52 +1,114 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Connect to EventSchema
+const Event = require('./EventSchema'); // Fixed path (no '/models' since we're already in models folder)
 
 function generateTheatreUUID(eventDate) {
-  const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY
-  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase(); // 7-character UID
+  const dateFormatted = eventDate.toISOString()
+    .slice(0, 10)
+    .split('-')
+    .reverse()
+    .join('')
+    .slice(0, 6);
+  const randomCode = Math.random()
+    .toString(36)
+    .substring(2, 9)
+    .toUpperCase();
   return `T-${dateFormatted}-${randomCode}`;
 }
 
-TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
-TheatreSchema.index({ seats.seatNumber: 1 }); // Optimize seat lookups
-
-
 const TheatreSchema = new mongoose.Schema({
-  theatreUUID: { type: String, unique: true },
-  eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // Connect to EventSchema
-  name: { type: String, required: true },
-  date: { type: Date, required: true },
-  startTime: { type: Date, required: true }, // Added startTime to ensure uniqueness
-  genre: { type: String, required: true },
-  director: { type: String, required: true },
-  cast: [{ type: String, required: true }],
-  posterImage: { type: String },
-  runtime: { type: Number, required: true },
-  theatreAddress: { type: String, required: true },
-
+  theatreUUID: { 
+    type: String, 
+    unique: true,
+    default: function() { return generateTheatreUUID(this.date); }
+  },
+  eventReference: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Event' 
+  },
+  name: { 
+    type: String, 
+    required: true 
+  },
+  date: { 
+    type: Date, 
+    required: true 
+  },
+  startTime: { 
+    type: Date, 
+    required: true 
+  },
+  genre: { 
+    type: String, 
+    required: true 
+  },
+  director: { 
+    type: String, 
+    required: true 
+  },
+  cast: [{ 
+    type: String, 
+    required: true 
+  }],
+  posterImage: { 
+    type: String 
+  },
+  runtime: { 
+    type: Number, 
+    required: true 
+  },
+  theatreAddress: { 
+    type: String, 
+    required: true 
+  },
   seats: [{
-    seatNumber: { type: String, required: true },
-    isBought: { type: Boolean, default: false },
-    ticketNumber: { type: String, ref: 'Ticket' }
+    seatNumber: { 
+      type: String, 
+      required: true 
+    },
+    isBought: { 
+      type: Boolean, 
+      default: false 
+    },
+    ticketNumber: { 
+      type: String, 
+      ref: 'Ticket' 
+    }
   }],
-
   reviews: [{
-    reviewer: { type: String, required: true },
-    rating: { type: Number, min: 1, max: 5, required: true },
-    review: { type: String },
-    reviewDate: { type: Date, default: Date.now }
+    reviewer: { 
+      type: String, 
+      required: true 
+    },
+    rating: { 
+      type: Number, 
+      min: 1, 
+      max: 5, 
+      required: true 
+    },
+    review: { 
+      type: String 
+    },
+    reviewDate: { 
+      type: Date, 
+      default: Date.now 
+    }
   }],
-
-  isActive: { type: Boolean, default: true },
-  isDeleted: { type: Boolean, default: false }
+  isActive: { 
+    type: Boolean, 
+    default: true 
+  },
+  isDeleted: { 
+    type: Boolean, 
+    default: false 
+  }
 }, { timestamps: true });
 
-// **Pre-Save Hook to Ensure Unique Event Entries**
-TheatreSchema.pre('save', async function (next) {
-  if (!this.theatreUUID) {
-    this.theatreUUID = generateTheatreUUID(this.date);
-  }
+// Add indexes AFTER schema definition
+TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
+TheatreSchema.index({ 'seats.seatNumber': 1 }); // Fixed nested path syntax
 
+// Pre-save hook
+TheatreSchema.pre('save', async function(next) {
   if (!this.eventReference) {
     try {
       const existingEvent = await Event.findOne({
@@ -72,8 +134,7 @@ TheatreSchema.pre('save', async function (next) {
       return next(error);
     }
   }
-
   next();
 });
 
-module.exports = mongoose.model('Theatre', TheatreSchema);
+module.exports = mongoose.models.Theatre || mongoose.model('Theatre', TheatreSchema);

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Import EventSchema
+const Event = require('./EventSchema');
 
 // Helper function to generate a 7-character alphanumeric UID
 function generateMovieUUID(eventDate) {
@@ -17,41 +17,47 @@ function formatDate(date) {
   return `${day}-${month}-${year}`;
 }
 
-MovieSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Ensure movie screening uniqueness
-MovieSchema.index({ seats: 1 }); // Optimize seat searches
-
-
 const MovieSchema = new mongoose.Schema({
- movieUID: { type: String, default: function() { return generateMovieUUID(this.screeningDate); }, unique: true },
+  movieUID: { 
+    type: String, 
+    default: function() { 
+      return generateMovieUUID(this.screeningDate); 
+    }, 
+    unique: true 
+  },
   screeningDate: { type: Date, required: true },
-  name: { type: String, required: true },             // Movie name
-  genre: { type: String, required: true },              // Genre of the movie
-  director: { type: String, required: true },           // Director of the movie
-  cast: [{ type: String }],                             // List of cast members
-  posterImage: { type: String },                        // URL of the movie poster image
-  runtime: { type: Number, required: true },            // Runtime in minutes
-  startTime: { type: Date, required: true },            // Start time of the screening
-  hallNumber: { type: Number, required: true },         // Cinema hall number
-  cinemaAddress: { type: String, required: true },      // Address of the cinema
+  name: { type: String, required: true },
+  genre: { type: String, required: true },
+  director: { type: String, required: true },
+  cast: [{ type: String }],
+  posterImage: { type: String },
+  runtime: { type: Number, required: true },
+  startTime: { type: Date, required: true },
+  hallNumber: { type: Number, required: true },
+  cinemaAddress: { type: String, required: true },
   seats: [{
     seatNumber: { type: String, required: true },
     isBought: { type: Boolean, default: false },
-    ticketNumber: { type: String, ref: 'Ticket' } // Reference to Ticket
+    ticketNumber: { type: String, ref: 'Ticket' }
   }],
   reviews: [{
-    reviewer: { type: String, required: true },       // Name or identifier of the reviewer
+    reviewer: { type: String, required: true },
     rating: { type: Number, min: 1, max: 5, required: true },
     comment: { type: String },
     reviewDate: { type: Date, default: Date.now }
   }],
-  imdbRating: { type: Number, default: null },          // IMDB rating, can be null
-  rottenTomatoesRating: { type: Number, default: null },   // Rotten Tomatoes rating, can be null
-  isActive: { type: Boolean, default: true }, // Determines if the concert is active
-  isDeleted: { type: Boolean, default: false }, // Determines if the concert is deleted
+  imdbRating: { type: Number, default: null },
+  rottenTomatoesRating: { type: Number, default: null },
+  isActive: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
-// Pre-save middleware to create an Event entry when a Movie is added
-MovieSchema.pre('save', async function (next) {
+// Add indexes AFTER schema definition
+MovieSchema.index({ name: 1, screeningDate: 1, startTime: 1 }, { unique: true });
+MovieSchema.index({ seats: 1 });
+
+// Pre-save middleware
+MovieSchema.pre('save', async function(next) {
   if (!this.eventReference) {
     try {
       const event = await Event.create({
@@ -60,7 +66,7 @@ MovieSchema.pre('save', async function (next) {
         eventDate: this.screeningDate,
         linkedEvent: this._id
       });
-      this.eventReference = event._id; // Link Movie to the newly created Event
+      this.eventReference = event._id;
     } catch (error) {
       return next(error);
     }
@@ -68,4 +74,5 @@ MovieSchema.pre('save', async function (next) {
   next();
 });
 
-module.exports = mongoose.model('Movie', MovieSchema);
+// Prevent model overwriting
+module.exports = mongoose.models.Movie || mongoose.model('Movie', MovieSchema);

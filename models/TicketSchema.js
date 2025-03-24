@@ -14,11 +14,7 @@ function generateTicketID(eventDate, eventName) {
   return `${dateFormatted}-${eventShortCode}-${randomCode}`;
 }
 
-TicketSchema.index({ ticketId: 1 }, { unique: true }); // Ensure ticket uniqueness
-TicketSchema.index({ customer: 1 }); // Speed up ticket lookup by customer
-TicketSchema.index({ eventDate: 1, eventName: 1 }); // Optimize searching for tickets by event
-TicketSchema.index({ seatNumber: 1 }); // Fast seat lookup
-TicketSchema.index({ holdExpiry: 1 }, { expireAfterSeconds: 600 }); // Automatically remove expired ticket holds
+
 
 
 const TicketSchema = new mongoose.Schema({
@@ -36,10 +32,16 @@ const TicketSchema = new mongoose.Schema({
   otherEvent: { type: mongoose.Schema.Types.ObjectId, ref: 'OtherEvent' },
 
   seatNumber: { type: String }, // Optional (for assigned seating events)
-  seatTier: { type: String, default: "GA", required: true } // Acts as either seat number or tier name
+  seatTier: { type: String, default: "GA", required: true }, // Acts as either seat number or tier name
   isActive: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
+
+TicketSchema.index({ ticketId: 1 }, { unique: true }); // Ensure ticket uniqueness
+TicketSchema.index({ customer: 1 }); // Speed up ticket lookup by customer
+TicketSchema.index({ eventDate: 1, eventName: 1 }); // Optimize searching for tickets by event
+TicketSchema.index({ seatNumber: 1 }); // Fast seat lookup
+TicketSchema.index({ holdExpiry: 1 }, { expireAfterSeconds: 600 }); // Automatically remove expired ticket holds
 
 // **Pre-Save Hook to Handle Ticket Sales for All Event Types**
 TicketSchema.pre('save', async function (next) {

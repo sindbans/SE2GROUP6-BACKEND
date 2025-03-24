@@ -2,20 +2,28 @@ const mongoose = require('mongoose');
 const Event = require('./EventSchema'); // Connect to EventSchema
 
 function generateTheatreUUID(eventDate) {
-  const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY
-  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase(); // 7-character UID
+  // Validate eventDate and fallback to current date if needed.
+  if (!eventDate || isNaN(new Date(eventDate))) {
+    eventDate = new Date();
+  }
+  const dateFormatted = eventDate.toISOString().slice(0, 10)
+      .split('-').reverse().join('').slice(0, 6);
+  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase();
   return `T-${dateFormatted}-${randomCode}`;
 }
 
-
-
-
 const TheatreSchema = new mongoose.Schema({
-  theatreUUID: { type: String, unique: true },
-  eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' }, // Connect to EventSchema
+  theatreUUID: {
+    type: String,
+    unique: true,
+    default: function () { // << CHANGE: Added default function to auto-generate theatreUUID.
+      return generateTheatreUUID(this.date);
+    }
+  },
+  eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
   name: { type: String, required: true },
   date: { type: Date, required: true },
-  startTime: { type: Date, required: true }, // Added startTime to ensure uniqueness
+  startTime: { type: Date, required: true },
   genre: { type: String, required: true },
   director: { type: String, required: true },
   cast: [{ type: String, required: true }],
@@ -41,14 +49,11 @@ const TheatreSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
-TheatreSchema.index({ seats.seatNumber: 1 }); // Optimize seat lookups
+TheatreSchema.index({ 'seats.seatNumber': 1 }); // Optimize seat lookups
 
-// **Pre-Save Hook to Ensure Unique Event Entries**
+// Pre-save hook remains for linking to an Event document.
+// Note: We removed UUID generation here since it's now handled by the default.
 TheatreSchema.pre('save', async function (next) {
-  if (!this.theatreUUID) {
-    this.theatreUUID = generateTheatreUUID(this.date);
-  }
-
   if (!this.eventReference) {
     try {
       const existingEvent = await Event.findOne({
@@ -57,13 +62,12 @@ TheatreSchema.pre('save', async function (next) {
         eventDate: this.date,
         startTime: this.startTime
       });
-
       if (existingEvent) {
         this.eventReference = existingEvent._id;
       } else {
         const event = await Event.create({
           name: this.name,
-          type: "Theatre",
+          type: "TheatreSchema",
           eventDate: this.date,
           startTime: this.startTime,
           linkedEvent: this._id
@@ -74,7 +78,6 @@ TheatreSchema.pre('save', async function (next) {
       return next(error);
     }
   }
-
   next();
 });
 

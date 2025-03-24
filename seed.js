@@ -10,7 +10,7 @@ const OtherEvent = require('./models/OtherEventSchema');
 const Event = require('./models/EventSchema'); // For checking the total count
 
 // Connect to MongoDB (update connection string as needed)
-mongoose.connect(process.env.MONGODB_URI,{
+mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGODB_URI,{
 // Main seeding function
 async function seedData() {
     try {
-        // Clean up previous data (feel free to comment these out if you want to preserve existing data)
+        // Clean up previous data
         await Movie.deleteMany({});
         await Theatre.deleteMany({});
         await Concert.deleteMany({});
@@ -61,7 +61,13 @@ async function seedData() {
                 rottenTomatoesRating: 80,
             });
         }
-        const movieDocs = await Movie.insertMany(movies);
+        // << CHANGE >>: Instead of insertMany, we loop and save each document to trigger pre-save hooks.
+        const movieDocs = [];
+        for (const data of movies) {
+            const movie = new Movie(data);
+            const saved = await movie.save();
+            movieDocs.push(saved);
+        }
         console.log(`Inserted ${movieDocs.length} movies`);
 
         // 2. Seed Theatre Shows (10 entries)
@@ -90,7 +96,12 @@ async function seedData() {
                 reviews: [],
             });
         }
-        const theatreDocs = await Theatre.insertMany(theatres);
+        const theatreDocs = [];
+        for (const data of theatres) {
+            const theatre = new Theatre(data);
+            const saved = await theatre.save();
+            theatreDocs.push(saved);
+        }
         console.log(`Inserted ${theatreDocs.length} theatre shows`);
 
         // 3. Seed Concerts (10 entries)
@@ -117,7 +128,12 @@ async function seedData() {
                 ],
             });
         }
-        const concertDocs = await Concert.insertMany(concerts);
+        const concertDocs = [];
+        for (const data of concerts) {
+            const concert = new Concert(data);
+            const saved = await concert.save();
+            concertDocs.push(saved);
+        }
         console.log(`Inserted ${concertDocs.length} concerts`);
 
         // 4. Seed Other Events (10 entries)
@@ -143,7 +159,12 @@ async function seedData() {
                 ],
             });
         }
-        const otherDocs = await OtherEvent.insertMany(others);
+        const otherDocs = [];
+        for (const data of others) {
+            const otherEvent = new OtherEvent(data);
+            const saved = await otherEvent.save();
+            otherDocs.push(saved);
+        }
         console.log(`Inserted ${otherDocs.length} other events`);
 
         // Verify total events in EventSchema (should be 40)

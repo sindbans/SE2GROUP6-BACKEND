@@ -5,7 +5,10 @@
     "mongoose": "^8.11.0"
   },
   "scripts": {
-    "seed": "node seed.js",
+    "seed": "node scripts/seed.js",
     "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }

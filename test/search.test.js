@@ -1,6 +1,6 @@
 // search.test.js
 
-const AllSearchStrategy = require('../search/AllSearchStratgey');
+const AllSearchStrategy = require('../search/AllSearchStrategy');
 const MovieSearchStrategy = require('../search/MovieSearchStrategy');
 const ConcertSearchStrategy = require('../search/ConcertSearchStrategy');
 const TheatreSearchStrategy = require('../search/TheatreSearchStrategy');
@@ -9,7 +9,7 @@ const SearchContext = require('../search/SearchContext');
 const searchController = require('../controllers/searchController');
 
 // Mocks for our models
-// (Assume that each model's 'find' method is stubbed to return a resolved promise with a predictable value.)
+// (Assume that each model's 'find' method is stubbed to return a chainable object.)
 const Event = require('../models/EventSchema');
 const Movie = require('../models/MovieSchema');
 const Concert = require('../models/ConcertSchema');
@@ -35,12 +35,11 @@ describe('Search Strategies', () => {
             const searchTerm = "Music Festival";
             const fakeResults = [{ name: "Music Festival" }];
 
-            // Setup the mock to return fake results
-            Event.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>: Return chainable object with sort() method.
+            Event.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
-            // Expect Event.find to be called with a query that only includes a regex on name
             expect(Event.find).toHaveBeenCalledWith({
                 $or: [{ name: { $regex: searchTerm, $options: 'i' } }]
             });
@@ -48,12 +47,12 @@ describe('Search Strategies', () => {
         });
 
         test('should search by name and eventDate when search term is a valid date', async () => {
-            // Use a valid date string
             const searchTerm = "2025-03-24";
             const parsedDate = new Date(searchTerm);
             const fakeResults = [{ name: "Some Event", eventDate: parsedDate }];
 
-            Event.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            Event.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -74,7 +73,8 @@ describe('Search Strategies', () => {
             const searchTerm = "Comedy";
             const fakeResults = [{ name: "Funny Movie", genre: "Comedy" }];
 
-            Movie.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            Movie.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -94,7 +94,8 @@ describe('Search Strategies', () => {
             const parsedDate = new Date(searchTerm);
             const fakeResults = [{ name: "New Year Special", screeningDate: parsedDate }];
 
-            Movie.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            Movie.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -118,7 +119,8 @@ describe('Search Strategies', () => {
             const searchTerm = "Rock";
             const fakeResults = [{ name: "Rock Night", performers: ["Band A"], sponsors: ["Brand X"] }];
 
-            Concert.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            Concert.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -141,7 +143,8 @@ describe('Search Strategies', () => {
             const parsedDate = new Date(searchTerm);
             const fakeResults = [{ name: "The Big Play", date: parsedDate }];
 
-            Theatre.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            Theatre.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -165,7 +168,8 @@ describe('Search Strategies', () => {
             const searchTerm = "Expo";
             const fakeResults = [{ name: "Tech Expo", eventCategory: "Exhibition", organizer: "Organizer X" }];
 
-            OtherEvent.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            OtherEvent.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -184,7 +188,8 @@ describe('Search Strategies', () => {
             const parsedDate = new Date(searchTerm);
             const fakeResults = [{ name: "Independence Day", date: parsedDate }];
 
-            OtherEvent.find.mockResolvedValue(fakeResults);
+            // << CHANGE >>
+            OtherEvent.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
@@ -216,7 +221,6 @@ describe('SearchContext', () => {
 });
 
 describe('Search Controller', () => {
-    // We use plain objects to simulate req and res
     let req, res;
 
     beforeEach(() => {
@@ -233,7 +237,6 @@ describe('Search Controller', () => {
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type or query' });
 
-        // Now missing query
         req.body = { type: 'Movies' };
         await searchController.search(req, res);
         expect(res.status).toHaveBeenCalledWith(400);
@@ -248,9 +251,7 @@ describe('Search Controller', () => {
     });
 
     test('should return results for valid request', async () => {
-        // Here we simulate a successful search by stubbing the strategy
         const fakeResults = [{ name: "Test Event" }];
-        // Stub the strategy to return fakeResults
         const strategyMock = { search: jest.fn().mockResolvedValue(fakeResults) };
         const originalGetStrategyByType = SearchContext.getStrategyByType;
         SearchContext.getStrategyByType = jest.fn().mockReturnValue(strategyMock);
@@ -260,7 +261,6 @@ describe('Search Controller', () => {
         expect(strategyMock.search).toHaveBeenCalledWith('Test Event');
         expect(res.json).toHaveBeenCalledWith({ results: fakeResults });
 
-        // Restore the original function
         SearchContext.getStrategyByType = originalGetStrategyByType;
     });
 });

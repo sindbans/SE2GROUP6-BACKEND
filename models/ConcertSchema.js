@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Connect to EventSchema
+const Event = require('./EventSchema'); // Connect to EventSchema
 
 function generateConcertUUID(eventDate) {
   const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY

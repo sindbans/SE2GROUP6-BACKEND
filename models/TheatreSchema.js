@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Connect to EventSchema
+const Event = require('./EventSchema'); // Connect to EventSchema
 
 function generateTheatreUUID(eventDate) {
   const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY
@@ -7,8 +7,7 @@ function generateTheatreUUID(eventDate) {
   return `T-${dateFormatted}-${randomCode}`;
 }
 
-TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
-TheatreSchema.index({ seats.seatNumber: 1 }); // Optimize seat lookups
+
 
 
 const TheatreSchema = new mongoose.Schema({
@@ -40,6 +39,9 @@ const TheatreSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
+
+TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
+TheatreSchema.index({ seats.seatNumber: 1 }); // Optimize seat lookups
 
 // **Pre-Save Hook to Ensure Unique Event Entries**
 TheatreSchema.pre('save', async function (next) {

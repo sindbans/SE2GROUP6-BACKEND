@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Connect to EventSchema
+const Event = require('./EventSchema'); // Connect to EventSchema
 
 function generateOtherEventUUID(eventDate) {
   const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6); // DDMMYY
@@ -7,8 +7,7 @@ function generateOtherEventUUID(eventDate) {
   return `O-${dateFormatted}-${randomCode}`;
 }
 
-OtherEventSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate events
-OtherEventSchema.index({ ticketPricing.tier: 1 }); // Optimize ticket pricing lookups
+
 
 
 const OtherEventSchema = new mongoose.Schema({
@@ -37,6 +36,9 @@ const OtherEventSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
+
+OtherEventSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate events
+OtherEventSchema.index({ ticketPricing.tier: 1 }); // Optimize ticket pricing lookups
 
 // **Pre-Save Hook to Ensure Unique Event Entries**
 OtherEventSchema.pre('save', async function (next) {

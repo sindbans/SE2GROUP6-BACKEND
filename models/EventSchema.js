@@ -22,11 +22,6 @@ function generateEventUUID(eventDate, type) {
   return `${dateFormatted}-${typeShortcode}-${randomCode}`;
 }
 
-EventSchema.index({ name: 1, eventDate: 1, startTime: 1 }, { unique: true }); // Ensure uniqueness of an event
-EventSchema.index({ type: 1 }); // Speed up queries filtering events by type
-EventSchema.index({ linkedEvent: 1 }); // Quick reference to related event schema (Movie, Concert, etc.)
-
-
 const EventSchema = new mongoose.Schema({
   eventUUID: { type: String, unique: true },
   name: { type: String, required: true },
@@ -34,6 +29,13 @@ const EventSchema = new mongoose.Schema({
   eventDate: { type: Date, required: true },
   linkedEvent: { type: mongoose.Schema.Types.ObjectId, refPath: 'type', required: false } // Dynamic reference
 }, { timestamps: true });
+
+EventSchema.index({ name: 1, eventDate: 1, startTime: 1 }, { unique: true }); // Ensure uniqueness of an event
+EventSchema.index({ type: 1 }); // Speed up queries filtering events by type
+EventSchema.index({ linkedEvent: 1 }); // Quick reference to related event schema (Movie, Concert, etc.)
+
+
+
 
 // Pre-save hook to generate eventUUID before saving
 EventSchema.pre('save', function (next) {

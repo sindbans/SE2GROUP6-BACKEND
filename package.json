@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.11.0"
+  },
+  "scripts": {
+    "seed": "node seed.js",
+    "test": "jest"
+  }
+}

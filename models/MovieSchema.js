@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Event = require('./models/EventSchema'); // Import EventSchema
+const Event = require('./EventSchema'); // Import EventSchema
 
 // Helper function to generate a 7-character alphanumeric UID
 function generateMovieUUID(eventDate) {
@@ -17,8 +17,7 @@ function formatDate(date) {
   return `${day}-${month}-${year}`;
 }
 
-MovieSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Ensure movie screening uniqueness
-MovieSchema.index({ seats: 1 }); // Optimize seat searches
+
 
 
 const MovieSchema = new mongoose.Schema({
@@ -49,6 +48,9 @@ const MovieSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }, // Determines if the concert is active
   isDeleted: { type: Boolean, default: false }, // Determines if the concert is deleted
 }, { timestamps: true });
+
+MovieSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Ensure movie screening uniqueness
+MovieSchema.index({ seats: 1 }); // Optimize seat searches
 
 // Pre-save middleware to create an Event entry when a Movie is added
 MovieSchema.pre('save', async function (next) {

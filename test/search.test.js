@@ -235,12 +235,12 @@ describe('Search Controller', () => {
         req.body = { query: 'Test' };
         await searchController.search(req, res);
         expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type, query, or user role' });
+        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type or query' });
 
         req.body = { type: 'Movies' };
         await searchController.search(req, res);
         expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type, query, or user role' });
+        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type or query' });
     });
 
     test('should return 500 if an invalid search type is provided', async () => {
@@ -263,4 +263,5 @@ describe('Search Controller', () => {
 
         SearchContext.getStrategyByType = originalGetStrategyByType;
     });
+
 });

@@ -21,7 +21,12 @@ class SearchContext {
     }
 
     async executeSearch(searchTerm, userRole, companyId) {
-        return await this.strategy.search(searchTerm, userRole, companyId);
+        // Only pass userRole and companyId when needed (for user-based searches)
+        if (userRole && companyId !== undefined) {
+            return await this.strategy.search(searchTerm, userRole, companyId);
+        } else {
+            return await this.strategy.search(searchTerm);  // For event searches, only searchTerm is passed
+        }
     }
 
     static getStrategyByType(type, userRole, companyId) {

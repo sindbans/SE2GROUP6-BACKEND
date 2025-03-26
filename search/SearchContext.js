@@ -4,6 +4,13 @@ const ConcertSearchStrategy = require('./ConcertSearchStrategy');
 const TheatreSearchStrategy = require('./TheatreSearchStrategy');
 const OtherSearchStrategy = require('./OtherSearchStrategy');
 
+const AdminSearchStrategy = require('./AdminStrategy');
+const CompanySearchStrategy = require('./CompanyStrategy');
+const EmployeeSearchStrategy = require('./EmployeeStrategy');
+const ManagementSearchStrategy = require('./ManagementStrategy');
+const CustomerSearchStrategy = require('./CustomerStrategy');
+const TicketSearchStrategy = require('./TicketStrategy');
+
 class SearchContext {
     constructor(strategy) {
         this.strategy = strategy;
@@ -13,13 +20,25 @@ class SearchContext {
         this.strategy = strategy;
     }
 
-    async executeSearch(searchTerm) {
-        return await this.strategy.search(searchTerm);
+    async executeSearch(searchTerm, userRole, companyId) {
+        return await this.strategy.search(searchTerm, userRole, companyId);
     }
 
-    static getStrategyByType(type) {
-        // The type is expected to be one of: All, Movies, Concerts, Theatre, Other
+    static getStrategyByType(type, userRole, companyId) {
+        // Add new strategies for Admin, Company, Employee, Management, Customer, and Ticket
         switch (type) {
+            case 'admin':
+                return new AdminSearchStrategy();
+            case 'company':
+                return new CompanySearchStrategy();
+            case 'employee':
+                return new EmployeeSearchStrategy(companyId);
+            case 'management':
+                return new ManagementSearchStrategy(companyId);
+            case 'customer':
+                return new CustomerSearchStrategy();
+            case 'ticket':
+                return new TicketSearchStrategy();
             case 'All':
                 return new AllSearchStrategy();
             case 'Movies':

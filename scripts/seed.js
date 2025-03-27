@@ -1,13 +1,15 @@
-// seed.js
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-// Import your models (adjust the paths if necessary)
+// Import your models
 const Movie = require('../models/MovieSchema');
 const Theatre = require('../models/TheatreSchema');
 const Concert = require('../models/ConcertSchema');
 const OtherEvent = require('../models/OtherEventSchema');
 const Event = require('../models/EventSchema'); // For checking the total count
+const Management = require('../models/Management');
+const Employee = require('../models/Employee');
+const Company = require('../models/Company');
 
 // Connect to MongoDB (update connection string as needed)
 mongoose.connect(process.env.MONGO_URI, {
@@ -29,6 +31,9 @@ async function seedData() {
         await Concert.deleteMany({});
         await OtherEvent.deleteMany({});
         await Event.deleteMany({});
+        await Management.deleteMany({});
+        await Employee.deleteMany({});
+        await Company.deleteMany({});
 
         const now = new Date();
 
@@ -171,12 +176,60 @@ async function seedData() {
         const totalEvents = await Event.countDocuments({});
         console.log(`Total Event documents created (should be 40): ${totalEvents}`);
 
+        const companies = [];
+        for (let i = 1; i <= 3; i++) {
+            const company = new Company({
+                companyName: `Company ${i}`
+            });
+            const savedCompany = await company.save();
+            companies.push(savedCompany);
+        }
+
+        console.log("Companies created:", companies);
+
+        // Step 2: Initialize Users based on company IDs
+
+        // Create an admin management user for each company
+        const adminManagement = new Management({
+            firstName: "Admin",
+            lastName: "User",
+            companyName: companies[0].companyName, // Admin assigned to the first company
+            companyId: companies[0].companyId,
+            password: "password123",
+            isAdmin: true // Admin role
+        });
+
+        // Regular management user for each company
+        const regularManagement = new Management({
+            firstName: "Regular",
+            lastName: "Manager",
+            companyName: companies[1].companyName, // Regular manager assigned to the second company
+            companyId: companies[1].companyId,
+            password: "password123",
+            isAdmin: false // Regular management role
+        });
+
+        // Employee connected to the first company
+        const employee = new Employee({
+            firstName: "Employee",
+            lastName: "User",
+            email: "employee@company.com",
+            password: "password123",
+            companyId: companies[0].companyId // Employee assigned to the first company
+        });
+
+        const savedAdminManagement = await adminManagement.save();
+        const savedRegularManagement = await regularManagement.save();
+        const savedEmployee = await employee.save();
+
+        console.log("Users created:", savedAdminManagement, savedRegularManagement, savedEmployee);
+
     } catch (error) {
         console.error('Seeding error:', error);
     } finally {
         mongoose.connection.close();
         console.log('Disconnected from MongoDB. Seeding complete.');
     }
-}
 
+}
 seedData();

@@ -1,6 +1,7 @@
-// searchStrategies/CustomerStrategy.js
+const Customer = require('../models/Customer');
+
 class CustomerStrategy {
-    async search(query) {
+    async search(query, uid, companyId) {
         const regex = new RegExp(query, 'i');
         return await Customer.find({ $or: [{ firstName: regex }, { lastName: regex }] });
     }

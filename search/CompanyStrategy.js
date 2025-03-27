@@ -1,8 +1,10 @@
-// searchStrategies/CompanyStrategy.js
+const Company = require('../models/Company');
+
 class CompanyStrategy {
-    async search(query) {
+    async search(query, uid, companyId) {
         const regex = new RegExp(query, 'i');
-        return await Company.find({ companyName: regex });
+        const results = await Company.find({ companyName: regex });
+        return results || [];
     }
 }
 

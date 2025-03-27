@@ -1,5 +1,5 @@
 class ISearchStrategy {
-    async search(searchTerm) {
+    async search(searchTerm, uid, companyId) {
         throw new Error('Search method not implemented');
     }
 }

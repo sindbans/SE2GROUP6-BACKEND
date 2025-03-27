@@ -7,6 +7,8 @@ const TheatreSearchStrategy = require('../search/TheatreSearchStrategy');
 const OtherSearchStrategy = require('../search/OtherSearchStrategy');
 const SearchContext = require('../search/SearchContext');
 const searchController = require('../controllers/searchController');
+const Management = require('../models/Management');
+const Employee = require('../models/Employee');
 
 // Mocks for our models
 // (Assume that each model's 'find' method is stubbed to return a chainable object.)
@@ -22,6 +24,8 @@ jest.mock('../models/MovieSchema');
 jest.mock('../models/ConcertSchema');
 jest.mock('../models/TheatreSchema');
 jest.mock('../models/OtherEventSchema');
+jest.mock('../models/Management');
+jest.mock('../models/Employee');
 
 describe('Search Strategies', () => {
     beforeEach(() => {

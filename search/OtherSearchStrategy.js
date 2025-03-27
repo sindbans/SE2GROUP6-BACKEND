@@ -2,13 +2,12 @@ const OtherEvent = require('../models/OtherEventSchema');
 const ISearchStrategy = require('./ISearchStrategy');
 
 class OtherSearchStrategy extends ISearchStrategy {
-    async search(searchTerm) {
+    async search(searchTerm, uid, companyId) {
         let dateQuery = null;
         const parsedDate = new Date(searchTerm);
         if (!isNaN(parsedDate)) {
             dateQuery = parsedDate;
         }
-
         const query = {
             $or: [
                 { name: { $regex: searchTerm, $options: 'i' } },
@@ -17,7 +16,6 @@ class OtherSearchStrategy extends ISearchStrategy {
                 ...(dateQuery ? [{ date: dateQuery }] : [])
             ]
         };
-
         return await OtherEvent.find(query).sort({ createdAt: -1 });
     }
 }

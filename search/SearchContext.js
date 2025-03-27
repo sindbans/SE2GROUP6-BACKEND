@@ -4,7 +4,6 @@ const ConcertSearchStrategy = require('./ConcertSearchStrategy');
 const TheatreSearchStrategy = require('./TheatreSearchStrategy');
 const OtherSearchStrategy = require('./OtherSearchStrategy');
 
-const AdminSearchStrategy = require('./AdminStrategy');
 const CompanySearchStrategy = require('./CompanyStrategy');
 const EmployeeSearchStrategy = require('./EmployeeStrategy');
 const ManagementSearchStrategy = require('./ManagementStrategy');
@@ -20,20 +19,19 @@ class SearchContext {
         this.strategy = strategy;
     }
 
-    async executeSearch(searchTerm, userRole, companyId) {
-        // Only pass userRole and companyId when needed (for user-based searches)
-        if (userRole && companyId !== undefined) {
-            return await this.strategy.search(searchTerm, userRole, companyId);
+    async executeSearch(searchTerm, uid, companyId) {
+        // If uid and companyId are undefined, we're in consumer search mode.
+        if (uid === undefined && companyId === undefined) {
+            return await this.strategy.search(searchTerm);
         } else {
-            return await this.strategy.search(searchTerm);  // For event searches, only searchTerm is passed
+            return await this.strategy.search(searchTerm, uid, companyId);
         }
     }
 
-    static getStrategyByType(type, userRole, companyId) {
-        // Add new strategies for Admin, Company, Employee, Management, Customer, and Ticket
-        switch (type) {
-            case 'admin':
-                return new AdminSearchStrategy();
+    static getStrategyByType(type, uid, companyId) {
+        // Normalize type to lower-case so that 'employee' or 'Employee' both work.
+        const normalizedType = type.toLowerCase();
+        switch (normalizedType) {
             case 'company':
                 return new CompanySearchStrategy();
             case 'employee':
@@ -44,15 +42,15 @@ class SearchContext {
                 return new CustomerSearchStrategy();
             case 'ticket':
                 return new TicketSearchStrategy();
-            case 'All':
+            case 'all':
                 return new AllSearchStrategy();
-            case 'Movies':
+            case 'movies':
                 return new MovieSearchStrategy();
-            case 'Concerts':
+            case 'concerts':
                 return new ConcertSearchStrategy();
-            case 'Theatre':
+            case 'theatre':
                 return new TheatreSearchStrategy();
-            case 'Other':
+            case 'other':
                 return new OtherSearchStrategy();
             default:
                 throw new Error('Invalid search type provided');

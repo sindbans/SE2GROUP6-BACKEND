@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
-const Movie = require('./models/Movie');
-const Concert = require('./models/Concert');
-const Theatre = require('./models/Theatre'); // To be created next
-const OtherEvent = require('./models/OtherEvent'); // To be created after Theatre
+const Movie = require('./MovieSchema');
+const Concert = require('./ConcertSchema');
+const Theatre = require('./TheatreSchema'); // To be created next
+const OtherEvent = require('./OtherEventSchema'); // To be created after Theatre
 
 const PROCESSING_FEE_PERCENTAGE = 0.08; // 8%, changeable later
 

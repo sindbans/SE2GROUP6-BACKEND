@@ -15,12 +15,13 @@ const ManagementSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   companyName: { type: String, required: true },
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
-  eventIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }], // Array of Event foreign keys
-  password: { type: String, required: true }, // Assume encryption is handled before saving
-  lastLogin: { type: Date }, // DateTime for last login
+  companyId: { type: String, required: true },
+  eventIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  password: { type: String, required: true },
+  lastLogin: { type: Date },
   isActive: { type: Boolean, default: true },
-  isDeleted: { type: Boolean, default: false }
-}, { timestamps: true }); // Automatically adds createdAt and updatedAt
+  isDeleted: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false } // New field to indicate admin privileges
+}, { timestamps: true });
 
 module.exports = mongoose.model('Management', ManagementSchema);

@@ -2,13 +2,12 @@ const Movie = require('../models/MovieSchema');
 const ISearchStrategy = require('./ISearchStrategy');
 
 class MovieSearchStrategy extends ISearchStrategy {
-    async search(searchTerm) {
+    async search(searchTerm, uid, companyId) {
         let dateQuery = null;
         const parsedDate = new Date(searchTerm);
         if (!isNaN(parsedDate)) {
             dateQuery = parsedDate;
         }
-
         const query = {
             $or: [
                 { name: { $regex: searchTerm, $options: 'i' } },
@@ -18,7 +17,6 @@ class MovieSearchStrategy extends ISearchStrategy {
                 ...(dateQuery ? [{ screeningDate: dateQuery }] : [])
             ]
         };
-
         return await Movie.find(query).sort({ createdAt: -1 });
     }
 }

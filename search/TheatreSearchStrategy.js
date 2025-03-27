@@ -2,7 +2,7 @@ const Theatre = require('../models/TheatreSchema');
 const ISearchStrategy = require('./ISearchStrategy');
 
 class TheatreSearchStrategy extends ISearchStrategy {
-    async search(searchTerm) {
+    async search(searchTerm, uid, companyId) {
         let dateQuery = null;
         const parsedDate = new Date(searchTerm);
         if (!isNaN(parsedDate)) {

@@ -1,39 +1,59 @@
 const SearchContext = require('../search/SearchContext');
+const Management = require('../models/Management');
+const Employee = require('../models/Employee');
 
 exports.search = async (req, res) => {
     try {
-        const { type, query, userRole, companyId } = req.body;
+        let { type, query, userRole, companyId, uid } = req.body;
 
-        // Basic validation for type and query, which are always required
+        // Default uid to "guest" if not provided
+        if (!uid) {
+            uid = "guest";
+        }
+
+        // Basic validation for type and query
         if (!type || !query) {
             return res.status(400).json({ message: 'Missing search type or query' });
         }
 
-        // For user-based searches (admin, employee, management, company)
-        if (['admin', 'employee', 'management', 'company'].includes(type)) {
-            // Check for userRole and companyId for user-based search types
+        // For user-specific searches (only 'employee' and 'management' require non-guest uid)
+        if (['employee', 'management'].includes(type)) {
+            if (uid === "guest") {
+                return res.status(403).json({ message: 'Access denied: guest users cannot perform this search.' });
+            }
             if (!userRole || companyId === undefined) {
-                return res.status(400).json({
-                    message: 'Missing userRole or companyId for user search'
-                });
+                return res.status(400).json({ message: 'Missing userRole or companyId for user search' });
             }
         }
 
-        // Set the appropriate search strategy based on type
         let strategy;
-        if (['admin', 'employee', 'management', 'company'].includes(type)) {
-            // For user searches, we need userRole and companyId
-            strategy = SearchContext.getStrategyByType(type, userRole, companyId);
+        if (['employee', 'management'].includes(type)) {
+            // Look up the management record for the requesting user by uid
+            const managementUser = await Management.findOne({ uid: uid });
+            if (!managementUser) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            if (managementUser.isAdmin) {
+                // If the management user is an admin, ignore companyId
+                strategy = SearchContext.getStrategyByType(type, uid, null);
+            } else {
+                strategy = SearchContext.getStrategyByType(type, uid, companyId);
+            }
         } else {
-            // For event searches (All, Movies, Concerts, etc.), we do not need userRole and companyId
+            // For consumer searches (e.g., events, companies), allow guest access.
             strategy = SearchContext.getStrategyByType(type);
         }
 
-        // Perform the search using the selected strategy
         const searchContext = new SearchContext(strategy);
-        const results = await searchContext.executeSearch(query);
 
-        // Return the search results
+        let results;
+        // For user-specific searches, pass additional parameters.
+        if (['employee', 'management'].includes(type)) {
+            results = await searchContext.executeSearch(query, uid, companyId);
+        } else {
+            results = await searchContext.executeSearch(query);
+        }
+
         res.json({ results });
     } catch (error) {
         console.error('Search error:', error);

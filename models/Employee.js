@@ -22,7 +22,7 @@ const EmployeeSchema = new mongoose.Schema({
   lastLogin: { type: Date },
   isActive: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
+  companyId: { type: String, required: true },
   remarks: { type: String },
   // Additional field that might be fruitful
   jobTitle: { type: String }

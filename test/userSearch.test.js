@@ -1,3 +1,5 @@
+// userSearch.test.js
+
 jest.setTimeout(15000);
 
 jest.mock('../models/Management');
@@ -60,11 +62,14 @@ beforeAll(async () => {
     seededCompany = await Company.findOne({ companyName: /Company/ });
 
     // Also, mock the find methods used in search strategies:
+    // For testing multiple employee results, return an array with more than one item.
     Employee.find = jest.fn().mockResolvedValue([
-        { firstName: "Employee", lastName: "User", companyId: regularManagementCompanyId, uid: "employeeUID" }
+        { firstName: "Employee", lastName: "User", companyId: regularManagementCompanyId, uid: "employeeUID" },
+        { firstName: "Employee", lastName: "User", companyId: regularManagementCompanyId, uid: "employeeUID2" }
     ]);
     Company.find = jest.fn().mockResolvedValue([
-        { companyId: seededCompany.companyId, companyName: seededCompany.companyName }
+        { companyId: seededCompany.companyId, companyName: seededCompany.companyName },
+        { companyId: "compExtra", companyName: "Company Extra" }
     ]);
 });
 
@@ -94,9 +99,10 @@ describe('User Search Strategies', () => {
 
         await searchController.search(req, res);
 
-        // Check that the response contains the mocked employee record.
         const result = res.json.mock.calls[0][0];
         expect(result.results).toBeInstanceOf(Array);
+        // Check that we get multiple employee records
+        expect(result.results).toHaveLength(2);
         const employeeRecord = result.results.find(emp =>
             emp.firstName === "Employee" && emp.lastName === "User"
         );
@@ -116,16 +122,17 @@ describe('User Search Strategies', () => {
 
         const result = res.json.mock.calls[0][0];
         expect(result.results).toBeInstanceOf(Array);
+        expect(result.results).toHaveLength(2);
         const employeeRecord = result.results.find(emp =>
             emp.firstName === "Employee" && emp.lastName === "User"
         );
         expect(employeeRecord).toBeDefined();
     });
 
-    test('should return companies data for company search', async () => {
+    test('should return companies data for company search with multiple companies', async () => {
         req.body = {
             type: 'company',
-            query: seededCompany.companyName,
+            query: seededCompany.companyName, // using seeded company's name
             uid: "guest" // company searches allow guest uid
         };
 
@@ -133,6 +140,8 @@ describe('User Search Strategies', () => {
 
         const result = res.json.mock.calls[0][0];
         expect(result.results).toBeInstanceOf(Array);
+        // Expect at least 2 companies from our mock
+        expect(result.results.length).toBeGreaterThanOrEqual(2);
         const companyRecord = result.results.find(comp =>
             comp.companyName === seededCompany.companyName
         );

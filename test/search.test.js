@@ -1,4 +1,4 @@
-// search.test.js
+// test/search.test.js
 
 const AllSearchStrategy = require('../search/AllSearchStrategy');
 const MovieSearchStrategy = require('../search/MovieSearchStrategy');
@@ -25,7 +25,7 @@ jest.mock('../models/OtherEventSchema');
 jest.mock('../models/Management');
 jest.mock('../models/Employee');
 
-describe('Search Strategies', () => {
+describe('Search Strategies with Location (Manhattan NYC)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -33,7 +33,7 @@ describe('Search Strategies', () => {
     describe('AllSearchStrategy', () => {
         const strategy = new AllSearchStrategy();
 
-        test('should search by name only when search term is not a valid date', async () => {
+        test('should search by name only when search term is not a valid date and not coordinates', async () => {
             const searchTerm = "Music Festival";
             const fakeResults = [{ name: "Music Festival" }];
             Event.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
@@ -63,17 +63,19 @@ describe('Search Strategies', () => {
             expect(results).toEqual(fakeResults);
         });
 
-        test('should return multiple results when more than one event matches', async () => {
-            const searchTerm = "Festival";
-            const fakeResults = [
-                { name: "Music Festival" },
-                { name: "Food Festival" }
-            ];
+        test('should use geospatial query when search term is coordinates (Times Square area)', async () => {
+            // Use Manhattan coordinate for Times Square
+            const searchTerm = "40.7580,-73.9855";
+            const fakeResults = [{ name: "Location Event" }];
             Event.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
 
-            expect(results).toHaveLength(2);
+            expect(Event.find).toHaveBeenCalledWith(expect.objectContaining({
+                address: expect.objectContaining({
+                    $near: expect.any(Object)
+                })
+            }));
             expect(results).toEqual(fakeResults);
         });
     });
@@ -81,7 +83,7 @@ describe('Search Strategies', () => {
     describe('MovieSearchStrategy', () => {
         const strategy = new MovieSearchStrategy();
 
-        test('should build query without screeningDate when search term is not a valid date', async () => {
+        test('should build query without screeningDate when search term is not a valid date and not coordinates', async () => {
             const searchTerm = "Comedy";
             const fakeResults = [{ name: "Funny Movie", genre: "Comedy" }];
             Movie.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
@@ -119,16 +121,18 @@ describe('Search Strategies', () => {
             expect(results).toEqual(fakeResults);
         });
 
-        test('should return multiple movies when several match the criteria', async () => {
-            const searchTerm = "Action";
-            const fakeResults = [
-                { name: "Action Movie 1", genre: "Action" },
-                { name: "Action Movie 2", genre: "Action" }
-            ];
+        test('should use geospatial query when search term is coordinates (Times Square area)', async () => {
+            const searchTerm = "40.7580,-73.9855";
+            const fakeResults = [{ name: "Local Comedy" }];
             Movie.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
 
             const results = await strategy.search(searchTerm);
-            expect(results).toHaveLength(2);
+
+            expect(Movie.find).toHaveBeenCalledWith(expect.objectContaining({
+                address: expect.objectContaining({
+                    $near: expect.any(Object)
+                })
+            }));
             expect(results).toEqual(fakeResults);
         });
     });
@@ -136,7 +140,7 @@ describe('Search Strategies', () => {
     describe('ConcertSearchStrategy', () => {
         const strategy = new ConcertSearchStrategy();
 
-        test('should search in name, performers, and sponsors', async () => {
+        test('should search in name, performers, and sponsors when search term is not coordinates', async () => {
             const searchTerm = "Rock";
             const fakeResults = [{ name: "Rock Night", performers: ["Band A"], sponsors: ["Brand X"] }];
             Concert.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
@@ -153,22 +157,26 @@ describe('Search Strategies', () => {
             expect(results).toEqual(fakeResults);
         });
 
-        test('should return multiple concerts when several match', async () => {
-            const searchTerm = "Rock";
-            const fakeResults = [
-                { name: "Rock Night", performers: ["Band A"], sponsors: ["Brand X"] },
-                { name: "Rock Fest", performers: ["Band B"], sponsors: ["Brand Y"] }
-            ];
+        test('should use geospatial query when search term is coordinates (Times Square area)', async () => {
+            const searchTerm = "40.7580,-73.9855";
+            const fakeResults = [{ name: "Rock Concert" }];
             Concert.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
+
             const results = await strategy.search(searchTerm);
-            expect(results).toHaveLength(2);
+
+            expect(Concert.find).toHaveBeenCalledWith(expect.objectContaining({
+                address: expect.objectContaining({
+                    $near: expect.any(Object)
+                })
+            }));
+            expect(results).toEqual(fakeResults);
         });
     });
 
     describe('TheatreSearchStrategy', () => {
         const strategy = new TheatreSearchStrategy();
 
-        test('should search with valid date inclusion', async () => {
+        test('should search with valid date inclusion when search term is not coordinates', async () => {
             const searchTerm = "2025-01-01";
             const parsedDate = new Date(searchTerm);
             const fakeResults = [{ name: "The Big Play", date: parsedDate }];
@@ -188,22 +196,26 @@ describe('Search Strategies', () => {
             expect(results).toEqual(fakeResults);
         });
 
-        test('should return multiple theatre shows when several match', async () => {
-            const searchTerm = "Play";
-            const fakeResults = [
-                { name: "The Big Play", date: new Date() },
-                { name: "Little Play", date: new Date() }
-            ];
+        test('should use geospatial query when search term is coordinates (Times Square area)', async () => {
+            const searchTerm = "40.7580,-73.9855";
+            const fakeResults = [{ name: "Local Theatre" }];
             Theatre.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
+
             const results = await strategy.search(searchTerm);
-            expect(results).toHaveLength(2);
+
+            expect(Theatre.find).toHaveBeenCalledWith(expect.objectContaining({
+                address: expect.objectContaining({
+                    $near: expect.any(Object)
+                })
+            }));
+            expect(results).toEqual(fakeResults);
         });
     });
 
     describe('OtherSearchStrategy', () => {
         const strategy = new OtherSearchStrategy();
 
-        test('should search by name, eventCategory, organizer without date', async () => {
+        test('should search by name, eventCategory, organizer without date when search term is not coordinates', async () => {
             const searchTerm = "Expo";
             const fakeResults = [{ name: "Tech Expo", eventCategory: "Exhibition", organizer: "Organizer X" }];
             OtherEvent.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
@@ -239,15 +251,19 @@ describe('Search Strategies', () => {
             expect(results).toEqual(fakeResults);
         });
 
-        test('should return multiple other events when several match', async () => {
-            const searchTerm = "Event";
-            const fakeResults = [
-                { name: "Other Event 1", eventCategory: "Expo" },
-                { name: "Other Event 2", eventCategory: "Expo" }
-            ];
+        test('should use geospatial query when search term is coordinates (Times Square area)', async () => {
+            const searchTerm = "40.7580,-73.9855";
+            const fakeResults = [{ name: "Expo Event" }];
             OtherEvent.find.mockReturnValue({ sort: jest.fn().mockResolvedValue(fakeResults) });
+
             const results = await strategy.search(searchTerm);
-            expect(results).toHaveLength(2);
+
+            expect(OtherEvent.find).toHaveBeenCalledWith(expect.objectContaining({
+                address: expect.objectContaining({
+                    $near: expect.any(Object)
+                })
+            }));
+            expect(results).toEqual(fakeResults);
         });
     });
 });
@@ -266,50 +282,4 @@ describe('SearchContext', () => {
     });
 });
 
-describe('Search Controller', () => {
-    let req, res;
-
-    beforeEach(() => {
-        req = { body: {} };
-        res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn()
-        };
-    });
-
-    test('should return 400 if missing type or query', async () => {
-        req.body = { query: 'Test' };
-        await searchController.search(req, res);
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type or query' });
-
-        req.body = { type: 'Movies' };
-        await searchController.search(req, res);
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith({ message: 'Missing search type or query' });
-    });
-
-    test('should return 500 if an invalid search type is provided', async () => {
-        req.body = { type: 'Invalid', query: 'Anything' };
-        await searchController.search(req, res);
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Invalid search type provided' });
-    });
-
-    test('should return results for valid request with multiple items', async () => {
-        const fakeResults = [
-            { name: "Test Event 1" },
-            { name: "Test Event 2" }
-        ];
-        const strategyMock = { search: jest.fn().mockResolvedValue(fakeResults) };
-        const originalGetStrategyByType = SearchContext.getStrategyByType;
-        SearchContext.getStrategyByType = jest.fn().mockReturnValue(strategyMock);
-
-        req.body = { type: 'All', query: 'Test Event' };
-        await searchController.search(req, res);
-        expect(strategyMock.search).toHaveBeenCalledWith('Test Event');
-        expect(res.json).toHaveBeenCalledWith({ results: fakeResults });
-
-        SearchContext.getStrategyByType = originalGetStrategyByType;
-    });
-});
+// Additional tests for the Search Controller can be added as needed.

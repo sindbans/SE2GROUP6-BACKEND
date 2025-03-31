@@ -64,9 +64,14 @@ async function seedData() {
                 })),
                 imdbRating: 7.5,
                 rottenTomatoesRating: 80,
+                // Dummy geospatial address in Manhattan (Times Square area)
+                address: {
+                    type: 'Point',
+                    coordinates: [ -73.9855 + i * 0.001, 40.7580 + i * 0.001 ]
+                }
             });
         }
-        // << CHANGE >>: Instead of insertMany, we loop and save each document to trigger pre-save hooks.
+        // Save movies individually to trigger pre-save hooks.
         const movieDocs = [];
         for (const data of movies) {
             const movie = new Movie(data);
@@ -99,6 +104,11 @@ async function seedData() {
                     isBought: false,
                 })),
                 reviews: [],
+                // Dummy geospatial address in Manhattan (Broadway area)
+                address: {
+                    type: 'Point',
+                    coordinates: [ -73.9851 + i * 0.001, 40.7614 + i * 0.001 ]
+                }
             });
         }
         const theatreDocs = [];
@@ -122,7 +132,11 @@ async function seedData() {
             concerts.push({
                 date: eventDate,
                 name: `Concert ${i}`,
-                address: `Concert Venue ${i}`,
+                // Dummy geospatial address in Manhattan (Madison Square Garden area)
+                address: {
+                    type: 'Point',
+                    coordinates: [ -73.9934 + i * 0.001, 40.7505 + i * 0.001 ]
+                },
                 startTime,
                 host: `Concert Host ${i}`,
                 performers: [`Band ${i}A`, `Band ${i}B`],
@@ -155,7 +169,11 @@ async function seedData() {
                 date: eventDate,
                 name: `Other Event ${i}`,
                 startTime,
-                address: `Other Event Venue ${i}`,
+                // Dummy geospatial address in Manhattan (Central Park area)
+                address: {
+                    type: 'Point',
+                    coordinates: [ -73.9712 + i * 0.001, 40.7831 + i * 0.001 ]
+                },
                 eventCategory: 'Expo',
                 organizer: `Organizer ${i}`,
                 sponsors: [`Sponsor ${i}`],
@@ -188,8 +206,6 @@ async function seedData() {
         console.log("Companies created:", companies);
 
         // Step 2: Initialize Users based on company IDs
-
-        // Create an admin management user for each company
         const adminManagement = new Management({
             firstName: "Admin",
             lastName: "User",
@@ -199,7 +215,6 @@ async function seedData() {
             isAdmin: true // Admin role
         });
 
-        // Regular management user for each company
         const regularManagement = new Management({
             firstName: "Regular",
             lastName: "Manager",
@@ -209,7 +224,6 @@ async function seedData() {
             isAdmin: false // Regular management role
         });
 
-        // Employee connected to the first company
         const employee = new Employee({
             firstName: "Employee",
             lastName: "User",
@@ -230,6 +244,5 @@ async function seedData() {
         mongoose.connection.close();
         console.log('Disconnected from MongoDB. Seeding complete.');
     }
-
 }
 seedData();

@@ -35,7 +35,17 @@ const MovieSchema = new mongoose.Schema({
     runtime: { type: Number, required: true },
     startTime: { type: Date, required: true },
     hallNumber: { type: Number, required: true },
-    cinemaAddress: { type: String, required: true },
+    cinemaAddress: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // Format: [longitude, latitude]
+            required: true,
+        }
+    },
     seats: [{
         seatNumber: { type: String, required: true },
         isBought: { type: Boolean, default: false },
@@ -55,6 +65,8 @@ const MovieSchema = new mongoose.Schema({
 
 MovieSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
 MovieSchema.index({ seats: 1 });
+MovieSchema.index({ cinemaAddress: '2dsphere' });
+
 
 MovieSchema.pre('save', async function (next) {
     if (!this.eventReference) {

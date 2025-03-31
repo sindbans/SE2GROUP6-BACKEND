@@ -1,8 +1,23 @@
+// MovieSearchStrategy.js
 const Movie = require('../models/MovieSchema');
 const ISearchStrategy = require('./ISearchStrategy');
+const { parseCoordinates } = require('../utils/geoUtils');
 
 class MovieSearchStrategy extends ISearchStrategy {
     async search(searchTerm, uid, companyId) {
+        const coordinates = parseCoordinates(searchTerm);
+        if (coordinates) {
+            // Assumes that MovieSchema now contains an "address" field with GeoJSON data.
+            const geoQuery = {
+                address: {
+                    $near: {
+                        $geometry: { type: 'Point', coordinates },
+                        $maxDistance: 5000
+                    }
+                }
+            };
+            return await Movie.find(geoQuery).sort({ createdAt: -1 });
+        }
         let dateQuery = null;
         const parsedDate = new Date(searchTerm);
         if (!isNaN(parsedDate)) {

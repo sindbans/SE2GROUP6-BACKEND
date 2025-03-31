@@ -23,7 +23,17 @@ const OtherEventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   startTime: { type: Date, required: true },
   posterImage: { type: String },
-  address: { type: String, required: true },
+  address: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // Format: [longitude, latitude]
+      required: true,
+    }
+  },
   eventCategory: { type: String, required: true },
   organizer: { type: String, required: true },
   sponsors: { type: [String], default: [] },
@@ -43,6 +53,8 @@ const OtherEventSchema = new mongoose.Schema({
 
 OtherEventSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
 OtherEventSchema.index({ 'ticketPricing.tier': 1 });
+OtherEventSchema.index({ address: '2dsphere' });
+
 
 OtherEventSchema.pre('save', async function (next) {
   if (!this.otherEventUUID) {

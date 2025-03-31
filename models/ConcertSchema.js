@@ -21,7 +21,17 @@ const ConcertSchema = new mongoose.Schema({
   eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
   name: { type: String, required: true },
   date: { type: Date, required: true },
-  address: { type: String, required: true },
+  address: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number], // Format: [longitude, latitude]
+      required: true,
+    }
+  },
   posterImage: { type: String },
   startTime: { type: Date, required: true },
   host: { type: String, required: true },
@@ -46,6 +56,8 @@ ConcertSchema.index({ eventReference: 1 });
 ConcertSchema.index({ isActive: 1 });
 ConcertSchema.index({ isDeleted: 1 });
 ConcertSchema.index({ name: 'text', performers: 'text', sponsors: 'text' });
+ConcertSchema.index({ address: '2dsphere' });
+
 
 ConcertSchema.pre('save', async function (next) {
   if (!this.concertUUID) {

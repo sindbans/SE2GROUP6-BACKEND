@@ -22,6 +22,7 @@ const OtherEventSchema = new mongoose.Schema({
   name: { type: String, required: true },
   date: { type: Date, required: true },
   startTime: { type: Date, required: true },
+  posterImage: { type: String },
   address: { type: String, required: true },
   eventCategory: { type: String, required: true },
   organizer: { type: String, required: true },

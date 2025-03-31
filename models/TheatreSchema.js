@@ -16,7 +16,7 @@ const TheatreSchema = new mongoose.Schema({
   theatreUUID: {
     type: String,
     unique: true,
-    default: function () { // << CHANGE: Added default function to auto-generate theatreUUID.
+    default: function () {
       return generateTheatreUUID(this.date);
     }
   },
@@ -48,17 +48,17 @@ const TheatreSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
-TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true }); // Prevent duplicate theatre shows
-TheatreSchema.index({ 'seats.seatNumber': 1 }); // Optimize seat lookups
+TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
+TheatreSchema.index({ 'seats.seatNumber': 1 });
 
-// Pre-save hook remains for linking to an Event document.
-// Note: We removed UUID generation here since it's now handled by the default.
+// Pre-save hook to link with an Event document
 TheatreSchema.pre('save', async function (next) {
   if (!this.eventReference) {
     try {
+      // Use "TheatreSchema" consistently for querying and creating the Event.
       const existingEvent = await Event.findOne({
         name: this.name,
-        type: "Theatre",
+        type: "TheatreSchema",
         eventDate: this.date,
         startTime: this.startTime
       });

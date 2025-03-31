@@ -28,7 +28,7 @@ const EventSchema = new mongoose.Schema({
   eventUUID: {
     type: String,
     unique: true,
-    default: function() { return generateEventUUID(this.eventDate, this.type); } // << CHANGE >>
+    default: function() { return generateEventUUID(this.eventDate, this.type); }
   },
   name: { type: String, required: true },
   type: { type: String, enum: Object.values(EVENT_TYPES), required: true },
@@ -36,7 +36,8 @@ const EventSchema = new mongoose.Schema({
   linkedEvent: { type: mongoose.Schema.Types.ObjectId, refPath: 'type', required: false }
 }, { timestamps: true });
 
-EventSchema.index({ name: 1, eventDate: 1, startTime: 1 }, { unique: true });
+// Remove the index referencing a non-existent "startTime" field.
+// EventSchema.index({ name: 1, eventDate: 1, startTime: 1 }, { unique: true });
 EventSchema.index({ type: 1 });
 EventSchema.index({ linkedEvent: 1 });
 

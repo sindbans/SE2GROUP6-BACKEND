@@ -5,23 +5,31 @@ const { bookTicket } = require('../services/bookingService');
  * POST /api/bookings
  * Expected JSON body:
  * {
- *   "userId": "<user's ObjectId>",
- *   "userType": "customer" | "employee" | "management", // if needed
+ *   "userId": "<logged in user's ObjectId>",  // optional; if not provided, guest checkout is assumed
+ *   "guestName": "Guest Name",                // required if userId not provided
+ *   "guestEmail": "guest@example.com",        // required if userId not provided
  *   "eventType": "MovieSchema" | "ConcertSchema" | "TheatreSchema" | "OtherEventSchema",
- *   "eventId": "<event document _id>",  // e.g., Movie _id
+ *   "eventId": "<event document _id>",
  *   // For movies/theatre:
- *   "seatNumbers": ["M1-S5"],         // array of selected seat numbers
+ *   "seatNumbers": ["M1-S5"],                 // array of selected seat numbers
  *   // For concerts/other events:
- *   "tier": "VIP",                    // chosen ticket tier (e.g., "Standard" or "VIP")
- *   "price": 50                       // price per ticket
+ *   "tier": "VIP",                            // chosen ticket tier
+ *   "price": 50                               // price per ticket
  * }
- * Returns the generated ticket details stored in TicketSchema.
+ * Returns the generated ticket details.
  */
 exports.createBooking = async (req, res) => {
     try {
         const bookingDetails = req.body;
-        if (!bookingDetails.userId || !bookingDetails.eventType || !bookingDetails.eventId || !bookingDetails.price) {
+        // Validate required fields.
+        if (!bookingDetails.eventType || !bookingDetails.eventId || !bookingDetails.price) {
             return res.status(400).json({ message: 'Missing required booking details.' });
+        }
+        // For guest checkout, require guestName and guestEmail.
+        if (!bookingDetails.userId) {
+            if (!bookingDetails.guestName || !bookingDetails.guestEmail) {
+                return res.status(400).json({ message: 'Guest checkout requires guestName and guestEmail.' });
+            }
         }
         const ticket = await bookTicket(bookingDetails);
         return res.status(201).json({ ticket });

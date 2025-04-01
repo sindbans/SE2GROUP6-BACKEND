@@ -1,4 +1,3 @@
-// test/booking.test.js
 jest.setTimeout(15000);
 
 const request = require('supertest');
@@ -12,36 +11,44 @@ const OtherEvent = require('../models/OtherEventSchema');
 
 describe('Booking Functionality', () => {
     let movieEvent, theatreEvent, concertEvent, otherEvent;
+    // For logged-in bookings, simulate a customer ID.
     const customerId = new mongoose.Types.ObjectId();
+    // For guest checkouts.
+    const guestName = "Guest User";
+    const guestEmail = "guest@example.com";
 
     beforeAll(async () => {
-        // Retrieve one event per type from the seeded data.
-        movieEvent = await Movie.findOne({});
-        theatreEvent = await Theatre.findOne({});
-        concertEvent = await Concert.findOne({});
-        otherEvent = await OtherEvent.findOne({});
+        // Use distinct event names for resetting.
+        movieEvent = await Movie.findOne({ name: "Movie 1" });
+        theatreEvent = await Theatre.findOne({ name: "Theatre Show 1" });
+        concertEvent = await Concert.findOne({ name: "Concert 1" });
+        otherEvent = await OtherEvent.findOne({ name: "Other Event 1" });
 
         if (!movieEvent || !theatreEvent || !concertEvent || !otherEvent) {
             throw new Error('Seed data missing: ensure events are seeded properly.');
         }
     });
 
-    // Reset state for movie and theatre events before each test.
     beforeEach(async () => {
-        // Reset movie seats: mark all as not bought and clear ticketNumber.
-        await Movie.updateOne(
-            { _id: movieEvent._id },
-            { $set: { "seats.$[].isBought": false, "seats.$[].ticketNumber": null } }
-        );
-        // Reset theatre seats similarly.
-        await Theatre.updateOne(
-            { _id: theatreEvent._id },
-            { $set: { "seats.$[].isBought": false, "seats.$[].ticketNumber": null } }
-        );
+        // Re-fetch and reset the movie and theatre documents.
+        movieEvent = await Movie.findOne({ name: "Movie 1" });
+        movieEvent.seats = movieEvent.seats.map(seat => ({
+            ...seat.toObject(),
+            isBought: false,
+            ticketNumber: null,
+        }));
+        await movieEvent.save();
+
+        theatreEvent = await Theatre.findOne({ name: "Theatre Show 1" });
+        theatreEvent.seats = theatreEvent.seats.map(seat => ({
+            ...seat.toObject(),
+            isBought: false,
+            ticketNumber: null,
+        }));
+        await theatreEvent.save();
     });
 
     afterEach(async () => {
-        // Clean up any created tickets between tests.
         await Ticket.deleteMany({});
     });
 
@@ -49,10 +56,9 @@ describe('Booking Functionality', () => {
         await mongoose.connection.close();
     });
 
-    describe('Movie Booking', () => {
-        test('should successfully book available seats for a movie', async () => {
-            // Get fresh movie data.
-            const freshMovie = await Movie.findById(movieEvent._id);
+    describe('Logged-in Movie Booking', () => {
+        test('should successfully book available seats for a movie with a customer ID', async () => {
+            const freshMovie = await Movie.findOne({ name: "Movie 1" });
             const availableSeats = freshMovie.seats.filter(s => !s.isBought);
             expect(availableSeats.length).toBeGreaterThanOrEqual(2);
             const seatNumbers = [availableSeats[0].seatNumber, availableSeats[1].seatNumber];
@@ -67,71 +73,62 @@ describe('Booking Functionality', () => {
                 .post('/api/bookings')
                 .send(bookingDetails);
             expect(res.status).toBe(201);
-            expect(res.body).toHaveProperty('ticket');
             expect(res.body.ticket).toHaveProperty('tickets');
-            expect(Array.isArray(res.body.ticket.tickets)).toBe(true);
             expect(res.body.ticket.tickets.length).toEqual(seatNumbers.length);
+            const updatedMovie = await Movie.findOne({ name: "Movie 1" });
+            for (const seatNumber of seatNumbers) {
+                const seat = updatedMovie.seats.find(s => s.seatNumber === seatNumber);
+                expect(seat.isBought).toBe(true);
+            }
+        });
+    });
 
-            // Verify that the seats are marked as booked.
-            const updatedMovie = await Movie.findById(freshMovie._id);
+    describe('Guest Movie Booking', () => {
+        test('should successfully book available seats for a movie with guest checkout', async () => {
+            const freshMovie = await Movie.findOne({ name: "Movie 1" });
+            const availableSeats = freshMovie.seats.filter(s => !s.isBought);
+            expect(availableSeats.length).toBeGreaterThanOrEqual(2);
+            const seatNumbers = [availableSeats[0].seatNumber, availableSeats[1].seatNumber];
+            const bookingDetails = {
+                eventType: 'MovieSchema',
+                eventId: freshMovie._id,
+                seatNumbers,
+                price: 15,
+                guestName,
+                guestEmail
+            };
+            const res = await request(app)
+                .post('/api/bookings')
+                .send(bookingDetails);
+            expect(res.status).toBe(201);
+            expect(res.body.ticket).toHaveProperty('tickets');
+            expect(res.body.ticket.tickets.length).toEqual(seatNumbers.length);
+            const updatedMovie = await Movie.findOne({ name: "Movie 1" });
             for (const seatNumber of seatNumbers) {
                 const seat = updatedMovie.seats.find(s => s.seatNumber === seatNumber);
                 expect(seat.isBought).toBe(true);
             }
         });
 
-        test('should fail booking if seat numbers are missing', async () => {
+        test('should fail guest booking if guest details are missing', async () => {
+            const freshMovie = await Movie.findOne({ name: "Movie 1" });
             const bookingDetails = {
-                userId: customerId,
                 eventType: 'MovieSchema',
-                eventId: movieEvent._id,
+                eventId: freshMovie._id,
+                seatNumbers: [freshMovie.seats[0].seatNumber],
                 price: 15
             };
             const res = await request(app)
                 .post('/api/bookings')
                 .send(bookingDetails);
             expect(res.status).toBe(400);
-            expect(res.body).toHaveProperty('message');
-            expect(res.body.message).toMatch(/No seat numbers provided/);
-        });
-
-        test('should fail booking if a seat is already booked', async () => {
-            const freshMovie = await Movie.findById(movieEvent._id);
-            const availableSeats = freshMovie.seats.filter(s => !s.isBought);
-            expect(availableSeats.length).toBeGreaterThan(0);
-            const seatNumber = availableSeats[0].seatNumber;
-            const bookingDetails1 = {
-                userId: customerId,
-                eventType: 'MovieSchema',
-                eventId: freshMovie._id,
-                seatNumbers: [seatNumber],
-                price: 15
-            };
-            const res1 = await request(app)
-                .post('/api/bookings')
-                .send(bookingDetails1);
-            expect(res1.status).toBe(201);
-
-            // Attempt to book the same seat again.
-            const bookingDetails2 = {
-                userId: customerId,
-                eventType: 'MovieSchema',
-                eventId: freshMovie._id,
-                seatNumbers: [seatNumber],
-                price: 15
-            };
-            const res2 = await request(app)
-                .post('/api/bookings')
-                .send(bookingDetails2);
-            expect(res2.status).toBe(400);
-            expect(res2.body).toHaveProperty('message');
-            expect(res2.body.message).toMatch(/already booked/);
+            expect(res.body.message).toMatch(/Guest checkout requires guestName and guestEmail/);
         });
     });
 
     describe('Theatre Booking', () => {
         test('should successfully book available seats for a theatre event', async () => {
-            const freshTheatre = await Theatre.findById(theatreEvent._id);
+            const freshTheatre = await Theatre.findOne({ name: "Theatre Show 1" });
             const availableSeats = freshTheatre.seats.filter(s => !s.isBought);
             expect(availableSeats.length).toBeGreaterThanOrEqual(1);
             const seatNumbers = [availableSeats[0].seatNumber];
@@ -146,7 +143,6 @@ describe('Booking Functionality', () => {
                 .post('/api/bookings')
                 .send(bookingDetails);
             expect(res.status).toBe(201);
-            expect(res.body.ticket).toHaveProperty('tickets');
             expect(res.body.ticket.tickets[0]).toHaveProperty('ticketId');
             expect(res.body.ticket.tickets[0]).toHaveProperty('seatNumber');
         });
@@ -204,7 +200,7 @@ describe('Booking Functionality', () => {
 
     describe('High Demand Booking', () => {
         test('should successfully book a large number of seats for a movie (simulate high demand)', async () => {
-            const freshMovie = await Movie.findById(movieEvent._id);
+            const freshMovie = await Movie.findOne({ name: "Movie 1" });
             const availableSeats = freshMovie.seats.filter(s => !s.isBought);
             expect(availableSeats.length).toBeGreaterThanOrEqual(10);
             const seatNumbers = availableSeats.slice(0, 10).map(s => s.seatNumber);

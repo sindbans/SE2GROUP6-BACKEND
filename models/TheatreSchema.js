@@ -27,7 +27,6 @@ const TheatreSchema = new mongoose.Schema({
   cast: [{ type: String, required: true }],
   posterImage: { type: String },
   runtime: { type: Number, required: true },
-  theatreAddress: { type: String },
   address: {
     type: { type: String, enum: ['Point'], default: 'Point' },
     coordinates: { type: [Number], required: true }
@@ -49,7 +48,7 @@ const TheatreSchema = new mongoose.Schema({
 
 TheatreSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
 TheatreSchema.index({ 'seats.seatNumber': 1 });
-TheatreSchema.index({ theatreAddress: '2dsphere' });
+TheatreSchema.index({ address: '2dsphere' });
 
 TheatreSchema.pre('save', async function (next) {
   if (this.isNew && !this.eventReference) {

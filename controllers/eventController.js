@@ -14,7 +14,8 @@ const formatEventDetails = (type, details) => {
                 eventDate: details.screeningDate,
                 startTime: details.startTime,
                 posterImage: details.posterImage,
-                address: details.cinemaAddress,
+                // For display, you may show the cinemaAddress.
+                address: details.cinemaAddress || details.address || 'Address not provided',
                 genre: details.genre,
                 director: details.director,
                 cast: details.cast,
@@ -27,7 +28,7 @@ const formatEventDetails = (type, details) => {
                 eventDate: details.date,
                 startTime: details.startTime,
                 posterImage: details.posterImage,
-                address: details.address,
+                address: details.address, // Concert uses "address"
                 host: details.host,
                 performers: details.performers,
                 sponsors: details.sponsors,
@@ -40,7 +41,8 @@ const formatEventDetails = (type, details) => {
                 eventDate: details.date,
                 startTime: details.startTime,
                 posterImage: details.posterImage,
-                address: details.theatreAddress,
+                // For display, you may show the theatreAddress.
+                address: details.theatreAddress || details.address || 'Address not provided',
                 genre: details.genre,
                 director: details.director,
                 cast: details.cast,
@@ -53,7 +55,7 @@ const formatEventDetails = (type, details) => {
                 eventDate: details.date,
                 startTime: details.startTime,
                 posterImage: details.posterImage || null,
-                address: details.address,
+                address: details.address || 'Address not provided',
                 eventCategory: details.eventCategory,
                 organizer: details.organizer,
                 sponsors: details.sponsors,
@@ -94,7 +96,6 @@ const fetchEventsList = async () => {
                 default:
                     break;
             }
-            // Ensure posterImage key exists even if null.
             posterImage = posterImage === undefined ? null : posterImage;
             return {
                 name: event.name,
@@ -126,7 +127,6 @@ exports.getEventDetails = async (req, res) => {
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
-
         let eventDetails;
         switch (event.type) {
             case 'MovieSchema':
@@ -156,7 +156,8 @@ exports.getEventDetails = async (req, res) => {
 };
 
 // NEW ENDPOINT: GET /api/events/ranked?strategy=<strategy>&eventType=<optional>&lat=<optional>&lng=<optional>
-// This endpoint uses the raw event list as a step and then applies the ranking service.
+// NEW ENDPOINT: GET /api/events/ranked?strategy=<strategy>&eventType=<optional>&lat=<optional>&lng=<optional>
+// NEW ENDPOINT: GET /api/events/ranked?strategy=<strategy>&eventType=<optional>&lat=<optional>&lng=<optional>
 exports.getRankedEvents = async (req, res) => {
     try {
         const { strategy, eventType, lat, lng } = req.query;
@@ -164,12 +165,10 @@ exports.getRankedEvents = async (req, res) => {
         if (eventType) {
             query.type = eventType;
         }
-        // Fetch events based on the optional filter
         const events = await Event.find(query);
-        // Map each event to a detailed preview (similar to fetchEventsList)
         const detailedEvents = await Promise.all(
             events.map(async (event) => {
-                let details = {};
+                let details = null;
                 switch (event.type) {
                     case 'MovieSchema':
                         details = await Movie.findById(event.linkedEvent);
@@ -187,21 +186,36 @@ exports.getRankedEvents = async (req, res) => {
                     default:
                         break;
                 }
+                // If no linked details found, assign default fallback values.
+                if (!details) {
+                    details = {
+                        posterImage: null,
+                        startTime: new Date(), // Use current time as a fallback
+                        imdbRating: 0,
+                        rating: 0,
+                        genre: '',
+                        // Default GeoJSON address for testing (Times Square coordinates)
+                        address: { type: "Point", coordinates: [-73.9855, 40.7580] }
+                    };
+                }
                 return {
                     name: event.name,
                     type: event.type,
                     eventDate: event.eventDate,
                     eventId: event.eventUUID,
                     posterImage: details.posterImage || null,
-                    startTime: details.startTime,
+                    startTime: details.startTime || null,
                     rating: details.imdbRating || details.rating || 0,
                     genre: details.genre || '',
-                    address: details.address || {}, // Contains the GeoJSON address
+                    // Use the GeoJSON "address" field for ranking purposes.
+                    address: details.address || { type: "Point", coordinates: [-73.9855, 40.7580] }
                 };
             })
         );
+        // Optionally filter out events with no details; with fallback, validEvents should equal detailedEvents.
+        const validEvents = detailedEvents.filter(item => item !== null);
+
         const rankingService = require('../services/rankingService');
-        // Build options for ranking if needed.
         const options = {};
         if (strategy === 'location') {
             if (!lat || !lng) {
@@ -210,10 +224,11 @@ exports.getRankedEvents = async (req, res) => {
             options.referenceCoordinates = [Number(lng), Number(lat)];
         }
         const sortedEvents = strategy
-            ? rankingService.applyRanking(detailedEvents, strategy, options)
-            : detailedEvents;
+            ? rankingService.applyRanking(validEvents, strategy, options)
+            : validEvents;
         return res.status(200).json({ events: sortedEvents });
     } catch (err) {
+        console.error('Error in getRankedEvents:', err);
         return res.status(500).json({ message: err.message });
     }
 };

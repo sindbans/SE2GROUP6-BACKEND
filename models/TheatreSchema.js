@@ -29,7 +29,7 @@ const TheatreSchema = new mongoose.Schema({
   cast: [{ type: String, required: true }],
   posterImage: { type: String },
   runtime: { type: Number, required: true },
-  theatreAddress: {
+  address: {
     type: {
       type: String,
       enum: ['Point'],

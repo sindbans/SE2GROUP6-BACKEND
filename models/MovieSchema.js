@@ -35,7 +35,7 @@ const MovieSchema = new mongoose.Schema({
     runtime: { type: Number, required: true },
     startTime: { type: Date, required: true },
     hallNumber: { type: Number, required: true },
-    cinemaAddress: {
+    address: {
         type: {
             type: String,
             enum: ['Point'],

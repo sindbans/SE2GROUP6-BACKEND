@@ -60,7 +60,8 @@ OtherEventSchema.pre('save', async function (next) {
   if (!this.otherEventUUID) {
     this.otherEventUUID = generateOtherEventUUID(this.date);
   }
-  if (!this.eventReference) {
+  // Only create and link an Event for new OtherEvent documents
+  if (this.isNew && !this.eventReference) {
     try {
       const existingEvent = await Event.findOne({
         name: this.name,
@@ -86,5 +87,6 @@ OtherEventSchema.pre('save', async function (next) {
   }
   next();
 });
+
 
 module.exports = mongoose.model('OtherEvent', OtherEventSchema);

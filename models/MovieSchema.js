@@ -1,8 +1,8 @@
+// MovieSchema.js
 const mongoose = require('mongoose');
 const Event = require('./EventSchema'); // Import EventSchema
 
 function generateMovieUUID(eventDate) {
-    // Validate eventDate; use current date if necessary.
     if (!eventDate || isNaN(new Date(eventDate))) {
         eventDate = new Date();
     }
@@ -12,19 +12,11 @@ function generateMovieUUID(eventDate) {
     return `M-${dateFormatted}-${randomCode}`;
 }
 
-function formatDate(date) {
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
-}
-
 const MovieSchema = new mongoose.Schema({
     movieUID: {
         type: String,
         unique: true,
-        default: function() { return generateMovieUUID(this.screeningDate); } // << CHANGE >>
+        default: function() { return generateMovieUUID(this.screeningDate); }
     },
     screeningDate: { type: Date, required: true },
     name: { type: String, required: true },
@@ -35,16 +27,10 @@ const MovieSchema = new mongoose.Schema({
     runtime: { type: Number, required: true },
     startTime: { type: Date, required: true },
     hallNumber: { type: Number, required: true },
+    cinemaAddress: { type: String },
     address: {
-        type: {
-            type: String,
-            enum: ['Point'],
-            default: 'Point'
-        },
-        coordinates: {
-            type: [Number], // Format: [longitude, latitude]
-            required: true,
-        }
+        type: { type: String, enum: ['Point'], default: 'Point' },
+        coordinates: { type: [Number], required: true }
     },
     seats: [{
         seatNumber: { type: String, required: true },
@@ -67,9 +53,9 @@ MovieSchema.index({ name: 1, date: 1, startTime: 1 }, { unique: true });
 MovieSchema.index({ seats: 1 });
 MovieSchema.index({ cinemaAddress: '2dsphere' });
 
-
 MovieSchema.pre('save', async function (next) {
-    if (!this.eventReference) {
+    // Only create a new Event if this is a new document
+    if (this.isNew && !this.eventReference) {
         try {
             const event = await Event.create({
                 name: this.name,

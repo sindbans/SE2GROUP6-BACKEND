@@ -3,13 +3,15 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
-const eventRoutes = require('./routes/eventRoutes');
 
 // Middleware for parsing JSON
 app.use(express.json());
 
 // Routes
+const eventRoutes = require('./routes/eventRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
 app.use('/api/events', eventRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // MongoDB connection (update with your connection string)
 mongoose.connect(process.env.MONGO_URI, {
@@ -22,5 +24,4 @@ mongoose.connect(process.env.MONGO_URI, {
         process.exit(1);
     });
 
-// Export the app so it can be used in tests
 module.exports = app;

@@ -63,7 +63,8 @@ ConcertSchema.pre('save', async function (next) {
   if (!this.concertUUID) {
     this.concertUUID = generateConcertUUID(this.date);
   }
-  if (!this.eventReference) {
+  // Only create and link an Event for new Concert documents
+  if (this.isNew && !this.eventReference) {
     try {
       const event = await Event.create({
         name: this.name,
@@ -78,5 +79,6 @@ ConcertSchema.pre('save', async function (next) {
   }
   next();
 });
+
 
 module.exports = mongoose.model('Concert', ConcertSchema);

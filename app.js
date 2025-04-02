@@ -9,10 +9,12 @@ app.use(express.json());
 const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,

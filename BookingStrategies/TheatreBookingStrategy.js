@@ -1,4 +1,3 @@
-// bookingStrategies/TheatreBookingStrategy.js
 const BookingStrategy = require('./BookingStrategy');
 const Theatre = require('../models/TheatreSchema');
 const Ticket = require('../models/TicketSchema');
@@ -10,10 +9,14 @@ class TheatreBookingStrategy extends BookingStrategy {
      * - eventId (Theatre _id)
      * - seatNumbers: array of selected seat numbers
      * - price: price per ticket
+     * - paymentToken: token from Stripe Checkout
      */
-    async book({ userId, guestName, guestEmail, eventId, seatNumbers, price }) {
+    async book({ userId, guestName, guestEmail, eventId, seatNumbers, price, paymentToken }) {
         if (!seatNumbers || !Array.isArray(seatNumbers) || seatNumbers.length === 0) {
             throw new Error('No seat numbers provided for theatre booking.');
+        }
+        if (!paymentToken) {
+            throw new Error('Payment token is required to confirm booking.');
         }
         if (!userId && (!guestName || !guestEmail)) {
             throw new Error('Guest checkout requires guestName and guestEmail.');
@@ -46,7 +49,8 @@ class TheatreBookingStrategy extends BookingStrategy {
                 price,
                 theatre: theatre._id,
                 seatNumber,
-                seatTier: "Assigned"
+                seatTier: "Assigned",
+                paymentToken
             };
             if (userId) {
                 ticketData.customer = userId;

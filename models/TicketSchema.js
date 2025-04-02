@@ -40,7 +40,10 @@ const TicketSchema = new mongoose.Schema(
       seatNumber: { type: String }, // Optional (for assigned seating events)
       seatTier: { type: String, default: "GA", required: true },
       isActive: { type: Boolean, default: true },
-      isDeleted: { type: Boolean, default: false }
+      isDeleted: { type: Boolean, default: false },
+        // Inside the TicketSchema definition (after guestEmail):
+      paymentToken: { type: String },
+
     },
     { timestamps: true }
 );

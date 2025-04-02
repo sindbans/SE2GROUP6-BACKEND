@@ -1,4 +1,3 @@
-// bookingStrategies/MovieBookingStrategy.js
 const BookingStrategy = require('./BookingStrategy');
 const Movie = require('../models/MovieSchema');
 const Ticket = require('../models/TicketSchema');
@@ -10,10 +9,14 @@ class MovieBookingStrategy extends BookingStrategy {
      * - eventId (Movie _id)
      * - seatNumbers: array of selected seat numbers
      * - price: price per ticket
+     * - paymentToken: token from Stripe Checkout
      */
-    async book({ userId, guestName, guestEmail, eventId, seatNumbers, price }) {
+    async book({ userId, guestName, guestEmail, eventId, seatNumbers, price, paymentToken }) {
         if (!seatNumbers || !Array.isArray(seatNumbers) || seatNumbers.length === 0) {
             throw new Error('No seat numbers provided for movie booking.');
+        }
+        if (!paymentToken) {
+            throw new Error('Payment token is required to confirm booking.');
         }
         if (!userId && (!guestName || !guestEmail)) {
             throw new Error('Guest checkout requires guestName and guestEmail.');
@@ -22,12 +25,10 @@ class MovieBookingStrategy extends BookingStrategy {
         const movie = await Movie.findById(eventId);
         if (!movie) throw new Error('Movie event not found.');
 
-        // Check if the event is sold out.
         if (movie.seats.every(seat => seat.isBought)) {
             throw new Error('Event sold out');
         }
 
-        // Validate each requested seat.
         for (const seatNumber of seatNumbers) {
             const seat = movie.seats.find(s => s.seatNumber === seatNumber);
             if (!seat) throw new Error(`Seat ${seatNumber} not found.`);
@@ -50,7 +51,8 @@ class MovieBookingStrategy extends BookingStrategy {
                 price,
                 movie: movie._id,
                 seatNumber,
-                seatTier: "Assigned"
+                seatTier: "Assigned",
+                paymentToken
             };
             if (userId) {
                 ticketData.customer = userId;

@@ -1,4 +1,3 @@
-// bookingStrategies/ConcertBookingStrategy.js
 const BookingStrategy = require('./BookingStrategy');
 const Concert = require('../models/ConcertSchema');
 const Ticket = require('../models/TicketSchema');
@@ -10,10 +9,14 @@ class ConcertBookingStrategy extends BookingStrategy {
      * - eventId (Concert _id)
      * - tier: chosen ticket tier (e.g., "VIP" or "Standard")
      * - price: price per ticket
+     * - paymentToken: token from Stripe Checkout
      */
-    async book({ userId, guestName, guestEmail, eventId, tier, price }) {
+    async book({ userId, guestName, guestEmail, eventId, tier, price, paymentToken }) {
         if (!tier) {
             throw new Error('Ticket tier must be provided for concert booking.');
+        }
+        if (!paymentToken) {
+            throw new Error('Payment token is required to confirm booking.');
         }
         if (!userId && (!guestName || !guestEmail)) {
             throw new Error('Guest checkout requires guestName and guestEmail.');
@@ -39,7 +42,8 @@ class ConcertBookingStrategy extends BookingStrategy {
             eventDate: concert.date,
             price,
             concert: concert._id,
-            seatTier: tier
+            seatTier: tier,
+            paymentToken
         };
         if (userId) {
             ticketData.customer = userId;

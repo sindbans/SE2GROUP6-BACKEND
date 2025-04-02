@@ -4,16 +4,16 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 
-// Middleware for parsing JSON
 app.use(express.json());
 
-// Routes
 const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
 
-// MongoDB connection (update with your connection string)
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

@@ -5,6 +5,7 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "mongoose": "^8.11.0",
+    "node-geocoder": "^4.4.1",
     "supertest": "^7.1.0"
   },
   "scripts": {

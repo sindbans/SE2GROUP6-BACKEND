@@ -10,11 +10,15 @@ const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
+const filterRoutes = require('./routes/filterRoutes');
 
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/filter', filterRoutes);
+
+
 
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,

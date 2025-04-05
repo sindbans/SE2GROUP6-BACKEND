@@ -1,5 +1,5 @@
 // seed.js
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 
 // Import your models
@@ -11,6 +11,9 @@ const Event = require('../models/EventSchema');
 const Management = require('../models/Management');
 const Employee = require('../models/Employee');
 const Company = require('../models/Company');
+
+// Debug: Log the MongoDB URI to verify it's loaded
+console.log("MONGO_URI:", process.env.MONGO_URI);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
@@ -167,6 +170,7 @@ async function seedData() {
         const totalEvents = await Event.countDocuments({});
         console.log(`Total Event documents created (should be 40): ${totalEvents}`);
 
+        // 5. Seed Companies, Management, and Employees
         const companies = [];
         for (let i = 1; i <= 3; i++) {
             const company = new Company({
@@ -177,7 +181,6 @@ async function seedData() {
         }
         console.log("Companies created:", companies);
 
-        // Create Users for Management, etc.
         const adminManagement = new Management({
             firstName: "Admin",
             lastName: "User",

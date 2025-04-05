@@ -1,25 +1,29 @@
-// app.js
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const mongoose = require('mongoose');
 
+app.use(cors());
 app.use(express.json());
 
+// Route imports
 const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
 const filterRoutes = require('./routes/filterRoutes');
+const locationRoutes = require('./routes/locationRoutes'); // ✅ NEW: Location routes
 
+// Mount routes
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/filter', filterRoutes);
+app.use('/api/locations', locationRoutes); // ✅ NEW: Add the route here
 
-
-
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

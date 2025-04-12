@@ -11,12 +11,14 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
 const filterRoutes = require('./routes/filterRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/filter', filterRoutes);
+app.use('/api/upload', uploadRoutes);
 
 
 

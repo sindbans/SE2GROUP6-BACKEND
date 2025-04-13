@@ -1,40 +1,52 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-03-31.basil'
+  apiVersion: '2022-11-15',
 });
 
 async function createCheckoutSession({ customerEmail, items, successUrl, cancelUrl, promotionCode }) {
-  // Map items to Stripe line_items.
-  // With automatic_tax enabled, you don't need to pass explicit tax_rates.
-  const line_items = items.map(item => ({
-      price_data: {
-          currency: item.currency || 'usd',
+  try {
+    const line_items = items.map(item => {
+      const amountInPaisa = Number(item.amount); // ✅ Must already be in paisa (15000 = ₹150)
+      return {
+        price_data: {
+          currency: item.currency || 'inr',
           product_data: {
-              name: item.name,
-              description: item.description || '',
+            name: item.name,
           },
-          unit_amount: Math.round(item.amount * 100), // in cents
-      },
-      quantity: item.quantity || 1,
-  }));
+          unit_amount: amountInPaisa,
+        },
+        quantity: item.quantity || 1,
+      };
+    });
 
-  // Create the session data with automatic tax enabled.
-  const sessionData = {
+    const selectedSeats = items.map(item => item.name.split(' - Seat ')[1]).join(', ');
+    const eventTitle = items[0]?.name?.split(' - ')[0] || 'Untitled Event';
+
+    const sessionData = {
       payment_method_types: ['card'],
       customer_email: customerEmail,
       line_items,
       mode: 'payment',
-      automatic_tax: { enabled: true },
-      success_url: successUrl,
+      success_url: successUrl + '?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: cancelUrl,
-  };
+      metadata: {
+        selectedSeats,
+        eventTitle,
+      },
+    };
 
-  // If a promotion code is provided, add it via discounts.
-  if (promotionCode) {
+    if (promotionCode) {
       sessionData.discounts = [{ promotion_code: promotionCode }];
-  }
+    }
 
-  const session = await stripe.checkout.sessions.create(sessionData);
-  return session;
+    console.log("✅ Stripe session payload:\n", JSON.stringify(sessionData, null, 2));
+
+    const session = await stripe.checkout.sessions.create(sessionData);
+    return session;
+
+  } catch (error) {
+    console.error("❌ Stripe error:", error.message);
+    throw new Error('Stripe checkout session creation failed.');
+  }
 }
 
 module.exports = { createCheckoutSession };

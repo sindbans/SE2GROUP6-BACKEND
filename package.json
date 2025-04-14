@@ -3,6 +3,7 @@
     "@diatche/parse-time": "^0.1.1",
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.3",
+    "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",

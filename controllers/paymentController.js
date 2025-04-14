@@ -1,9 +1,10 @@
 const { createCheckoutSession } = require('../services/paymentService');
+const stripe = require('stripe')(process.env.STRIPE_KEY);
 
 exports.createPaymentSession = async (req, res) => {
     try {
         const { customerEmail, items } = req.body;
-        if (!customerEmail || !items) {
+        if (!customerEmail || !items || items.length == 0) {
             return res.status(400).json({ message: 'Missing customer email or items for checkout.' });
         }
         // Use environment variables or defaults for URLs.
@@ -15,5 +16,15 @@ exports.createPaymentSession = async (req, res) => {
     } catch (error) {
         console.error('Error in createPaymentSession:', error);
         return res.status(400).json({ message: error.message });
+    }
+};
+
+exports.getSessionDetails = async (req, res) => {
+    try {
+        const session = await stripe.checkout.sessions.retrieve(req.params.id);
+        res.json(session);
+    } catch (error) {
+        console.error('❌ Error fetching session details:', error.message);
+        res.status(400).json({ message: 'Failed to fetch session details' });
     }
 };

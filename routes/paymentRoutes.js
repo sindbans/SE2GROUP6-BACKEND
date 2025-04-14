@@ -4,4 +4,6 @@ const paymentController = require('../controllers/paymentController');
 
 router.post('/checkout', paymentController.createPaymentSession);
 
+router.get('/session/:id', paymentController.getSessionDetails)
+
 module.exports = router;

@@ -73,6 +73,7 @@ mongoose.connect(process.env.MONGO_URI, {
         process.exit(1);
     });
 
+
 // Routes
 const eventRoutes = require('./routes/eventRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
@@ -84,6 +85,8 @@ const searchRoutes = require('./routes/searchRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const seatRoutes = require('./routes/seatRoutes');
 const authRoutes = require('./routes/authRoutes');
+const managementAuthRoutes = require('./routes/managementRoutes');
+const employeeAuthRoutes = require('./routes/employeeRoutes');
 
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -95,5 +98,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/seats', seatRoutes);
 app.use('/api/auth', authRoutes); // now includes Google + manual auth
+app.use('/api/management', managementAuthRoutes);
+app.use('/api/employee', employeeAuthRoutes);
 
 module.exports = app;

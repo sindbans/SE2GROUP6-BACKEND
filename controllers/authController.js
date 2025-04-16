@@ -2,7 +2,6 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const Customer = require('../models/Customer');
-const GoogleUser = require('../models/userSchema');
 const { encrypt } = require('../utils/encryptionHelper');
 
 // Email Transporter

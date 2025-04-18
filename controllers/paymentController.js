@@ -1,3 +1,4 @@
+
 const { createCheckoutSession } = require('../services/paymentService');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -10,12 +11,19 @@ exports.createPaymentSession = async (req, res) => {
       return res.status(400).json({ message: 'Missing customer email or items for checkout.' });
     }
 
+    // Convert item amounts from dollars to cents
+    const formattedItems = items.map(item => ({
+      ...item,
+      amount: Math.round(Number(item.amount) * 100), // $25 → 2500
+      currency: 'usd',
+    }));
+
     const successUrl = process.env.SUCCESS_URL || 'http://localhost:3001/payment-success?session_id={CHECKOUT_SESSION_ID}';
     const cancelUrl = process.env.CANCEL_URL || 'http://localhost:3001/payment-failure';
 
     const session = await createCheckoutSession({
       customerEmail,
-      items,
+      items: formattedItems,
       successUrl,
       cancelUrl,
     });
@@ -38,4 +46,3 @@ exports.getSessionDetails = async (req, res) => {
     res.status(400).json({ message: 'Failed to fetch session details' });
   }
 };
-

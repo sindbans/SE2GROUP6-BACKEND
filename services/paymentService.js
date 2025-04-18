@@ -1,3 +1,4 @@
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2022-11-15',
 });
@@ -5,14 +6,14 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
 async function createCheckoutSession({ customerEmail, items, successUrl, cancelUrl, promotionCode }) {
   try {
     const line_items = items.map(item => {
-      const amountInPaisa = Number(item.amount); // ✅ Must already be in paisa (15000 = ₹150)
+      const amountInCents = Number(item.amount); // ✅ Must already be in cents ($150.00 = 15000)
       return {
         price_data: {
-          currency: item.currency || 'inr',
+          currency: item.currency || 'usd',  // ✅ Switched from 'inr' to 'usd'
           product_data: {
             name: item.name,
           },
-          unit_amount: amountInPaisa,
+          unit_amount: amountInCents,
         },
         quantity: item.quantity || 1,
       };

@@ -1,8 +1,8 @@
+
 // seed.js
 require('dotenv').config({ path: '../.env' });
 const mongoose = require('mongoose');
 
-// Import your models
 const Movie = require('../models/MovieSchema');
 const Theatre = require('../models/TheatreSchema');
 const Concert = require('../models/ConcertSchema');
@@ -12,10 +12,8 @@ const Management = require('../models/Management');
 const Employee = require('../models/Employee');
 const Company = require('../models/Company');
 
-// Debug: Log the MongoDB URI to verify it's loaded
 console.log("MONGO_URI:", process.env.MONGO_URI);
 
-// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -28,7 +26,6 @@ mongoose.connect(process.env.MONGO_URI, {
 
 async function seedData() {
     try {
-        // Clean up previous data
         await Movie.deleteMany({});
         await Theatre.deleteMany({});
         await Concert.deleteMany({});
@@ -40,7 +37,6 @@ async function seedData() {
 
         const now = new Date();
 
-        // 1. Seed Movies (10 entries)
         const movies = [];
         for (let i = 1; i <= 10; i++) {
             const screeningDate = new Date(now);
@@ -69,13 +65,9 @@ async function seedData() {
                 }
             });
         }
-        for (const data of movies) {
-            const movie = new Movie(data);
-            await movie.save();
-        }
+        await Movie.insertMany(movies);
         console.log(`Inserted 10 movies`);
 
-        // 2. Seed Theatre Shows (10 entries)
         const theatres = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -102,13 +94,9 @@ async function seedData() {
                 }
             });
         }
-        for (const data of theatres) {
-            const theatre = new Theatre(data);
-            await theatre.save();
-        }
+        await Theatre.insertMany(theatres);
         console.log(`Inserted 10 theatre shows`);
 
-        // 3. Seed Concerts (10 entries)
         const concerts = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -127,18 +115,14 @@ async function seedData() {
                 performers: [`Band ${i}A`, `Band ${i}B`],
                 sponsors: [`Sponsor ${i}`],
                 ticketPricing: [
-                    { tier: 'Standard', amountAvailable: 100, pricePerTicket: 50 },
-                    { tier: 'VIP', amountAvailable: 20, pricePerTicket: 120 }
+                    { tier: 'Standard', amountAvailable: 100, pricePerTicket: 40 },
+                    { tier: 'VIP', amountAvailable: 20, pricePerTicket: 100 }
                 ]
             });
         }
-        for (const data of concerts) {
-            const concert = new Concert(data);
-            await concert.save();
-        }
+        await Concert.insertMany(concerts);
         console.log(`Inserted 10 concerts`);
 
-        // 4. Seed Other Events (10 entries)
         const others = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -157,20 +141,16 @@ async function seedData() {
                 organizer: `Organizer ${i}`,
                 sponsors: [`Sponsor ${i}`],
                 ticketPricing: [
-                    { tier: 'General', amountAvailable: 50, pricePerTicket: 30 }
+                    { tier: 'General', amountAvailable: 50, pricePerTicket: 25 }
                 ]
             });
         }
-        for (const data of others) {
-            const otherEvent = new OtherEvent(data);
-            await otherEvent.save();
-        }
+        await OtherEvent.insertMany(others);
         console.log(`Inserted 10 other events`);
 
         const totalEvents = await Event.countDocuments({});
         console.log(`Total Event documents created (should be 40): ${totalEvents}`);
 
-        // 5. Seed Companies, Management, and Employees
         const companies = [];
         for (let i = 1; i <= 3; i++) {
             const company = new Company({

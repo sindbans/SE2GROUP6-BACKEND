@@ -1,30 +1,25 @@
 // utils/encryptionHelper.js
 const crypto = require('crypto');
 
-// Ensure SECRET_KEY is defined
-const secretKey = process.env.SECRET_KEY;
-if (!secretKey) {
-    throw new Error("SECRET_KEY is not defined in environment variables.");
+const KEY = Buffer.from(process.env.SECRET_KEY, 'hex');   // 32 bytes
+const IV  = Buffer.from(process.env.SECRET_IV,  'hex');   // 16 bytes
+
+if (KEY.length !== 32 || IV.length !== 16) {
+    throw new Error('SECRET_KEY must be 32 bytes (hex‑64) and SECRET_IV 16 bytes (hex‑32).');
 }
 
-/**
- * Encrypt a string (e.g. user uid)
- */
-function encrypt(str) {
-    const cipher = crypto.createCipher('aes-256-cbc', secretKey);
-    let encrypted = cipher.update(str, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return encrypted;
+function encrypt(plain) {
+    const cipher = crypto.createCipheriv('aes-256-cbc', KEY, IV);
+    let enc = cipher.update(String(plain), 'utf8', 'hex');
+    enc += cipher.final('hex');
+    return enc;
 }
 
-/**
- * Decrypt an AES-256-CBC string
- */
-function decrypt(encryptedStr) {
-    const decipher = crypto.createDecipher('aes-256-cbc', secretKey);
-    let decrypted = decipher.update(encryptedStr, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+function decrypt(enc) {
+    const decipher = crypto.createDecipheriv('aes-256-cbc', KEY, IV);
+    let dec = decipher.update(enc, 'hex', 'utf8');
+    dec += decipher.final('utf8');
+    return dec;
 }
 
 module.exports = { encrypt, decrypt };

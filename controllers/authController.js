@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const Customer = require('../models/Customer');
-const { encrypt } = require('../utils/encryptionHelper');
+const jwt = require('jsonwebtoken');
 
 // Email Transporter
 const transporter = nodemailer.createTransport({
@@ -44,9 +44,15 @@ exports.login = async (req, res) => {
         const isMatch = await customer.comparePassword(password);
         if (!isMatch) return res.status(401).json({ message: 'Wrong password' });
 
-        const token = encrypt(customer.uid);
+
+        const payload = {uid: customer.uid, email: customer.email}
+        const token = jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
         const name = `${customer.firstName} ${customer.lastName}`;
-        res.json({ message: 'Login successful', token, name });
+        res.json({ message: 'Login successful', token, name, uid: customer.uid });
     } catch (err) {
         console.error('[login] Error:', err);
         res.status(500).json({ message: 'Server error' });
@@ -54,19 +60,31 @@ exports.login = async (req, res) => {
 };
 
 // Google Callback Handler
+// Google Callback Handler
 exports.googleCallback = async (req, res) => {
     try {
-        const googleUser = req.user;
-        const token = encrypt(googleUser.googleId); // You can map to UID if needed
+        const googleUser = req.user;               // set by passport
         const name = googleUser.displayName;
+        res.redirect(
+            `http://localhost:5173/home?token=${token}&name=${encodeURIComponent(name)}`
+        );
 
-        // Redirect back to frontend with token & name
-        res.redirect(`http://localhost:5173/home?token=${token}&name=${encodeURIComponent(name)}`);
+        const payload = {uid: googleUser.googleId, email: googleUser.email};
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        const redirectUrl =
+            `http://localhost:5173/home?token=${token}` +
+            `&name= ${ encodeURIComponent(googleUser.displayName)}`  ; +
+            `&uid= ${ googleUser.googleId}`  ;
+         res.redirect(redirectUrl);
+
+
     } catch (err) {
         console.error('[googleCallback] Error:', err);
         res.redirect('http://localhost:5173/login');
     }
 };
+
 
 // Password Reset
 exports.requestPasswordReset = async (req, res) => {

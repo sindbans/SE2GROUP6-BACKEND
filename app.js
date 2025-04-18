@@ -87,6 +87,7 @@ const seatRoutes = require('./routes/seatRoutes');
 const authRoutes = require('./routes/authRoutes');
 const managementAuthRoutes = require('./routes/managementRoutes');
 const employeeAuthRoutes = require('./routes/employeeRoutes');
+const crypto = require('crypto');
 
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -100,5 +101,6 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/auth', authRoutes); // now includes Google + manual auth
 app.use('/api/management', managementAuthRoutes);
 app.use('/api/employee', employeeAuthRoutes);
+
 
 module.exports = app;

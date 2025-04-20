@@ -37,7 +37,7 @@ async function seedData() {
 
         const now = new Date();
 
-        // 1. Seed Movies (10 entries)
+        // 1. Seed Movies
         const movies = [];
         for (let i = 1; i <= 10; i++) {
             const screeningDate = new Date(now);
@@ -69,10 +69,10 @@ async function seedData() {
         for (const data of movies) {
             const movie = new Movie(data);
             await movie.save();
+        
+        console.log(`Inserted 10 movies` , movie._id);
         }
-        console.log(`Inserted 10 movies`);
-
-        // 2. Seed Theatre Shows (10 entries)
+        // 2. Seed Theatre Shows
         const theatres = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -102,10 +102,17 @@ async function seedData() {
         for (const data of theatres) {
             const theatre = new Theatre(data);
             await theatre.save();
+
+            await Event.create({
+                name: theatre.name,
+                type: "TheatreSchema",
+                eventDate: theatre.date,
+                linkedEvent: theatre._id
+            });
         }
         console.log(`Inserted 10 theatre shows`);
 
-        // 3. Seed Concerts (10 entries)
+        // 3. Seed Concerts ✅ with linked Event
         const concerts = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -132,10 +139,17 @@ async function seedData() {
         for (const data of concerts) {
             const concert = new Concert(data);
             await concert.save();
-        }
-        console.log(`Inserted 10 concerts`);
 
-        // 4. Seed Other Events (10 entries)
+            await Event.create({
+                name: concert.name,
+                type: "ConcertSchema",
+                eventDate: concert.date,
+                linkedEvent: concert._id
+            });
+        
+        console.log(`Inserted 10 concerts` , concert._id);
+        }
+        // 4. Seed Other Events ✅ with linked Event
         const others = [];
         for (let i = 1; i <= 10; i++) {
             const eventDate = new Date(now);
@@ -161,12 +175,20 @@ async function seedData() {
         for (const data of others) {
             const otherEvent = new OtherEvent(data);
             await otherEvent.save();
+
+            await Event.create({
+                name: otherEvent.name,
+                type: "OtherEventSchema",
+                eventDate: otherEvent.date,
+                linkedEvent: otherEvent._id
+            });
         }
         console.log(`Inserted 10 other events`);
 
         const totalEvents = await Event.countDocuments({});
         console.log(`Total Event documents created (should be 40): ${totalEvents}`);
 
+        // 5. Seed Companies & Users
         const companies = [];
         for (let i = 1; i <= 3; i++) {
             const company = new Company({
@@ -177,7 +199,6 @@ async function seedData() {
         }
         console.log("Companies created:", companies);
 
-        // Create Users for Management, etc.
         const adminManagement = new Management({
             firstName: "Admin",
             lastName: "User",

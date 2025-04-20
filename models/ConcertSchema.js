@@ -1,14 +1,10 @@
 const mongoose = require('mongoose');
-const Event = require('./EventSchema'); // Connect to EventSchema
+const Event = require('./EventSchema');
 
 function generateConcertUUID(eventDate) {
-  // Ensure eventDate is valid; fallback to current date if not.
-  if (!eventDate || isNaN(new Date(eventDate))) {
-    eventDate = new Date();
-  }
-  const dateFormatted = eventDate.toISOString().slice(0, 10)
-      .split('-').reverse().join('').slice(0, 6); // DDMMYY
-  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase(); // 7-character UID
+  if (!eventDate || isNaN(new Date(eventDate))) eventDate = new Date();
+  const dateFormatted = eventDate.toISOString().slice(0, 10).split('-').reverse().join('').slice(0, 6);
+  const randomCode = Math.random().toString(36).substring(2, 9).toUpperCase();
   return `C-${dateFormatted}-${randomCode}`;
 }
 
@@ -16,21 +12,14 @@ const ConcertSchema = new mongoose.Schema({
   concertUUID: {
     type: String,
     unique: true,
-    default: function() { return generateConcertUUID(this.date); } // << CHANGE >>
+    default: function() { return generateConcertUUID(this.date); }
   },
   eventReference: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
   name: { type: String, required: true },
   date: { type: Date, required: true },
   address: {
-    type: {
-      type: String,
-      enum: ['Point'],
-      default: 'Point'
-    },
-    coordinates: {
-      type: [Number], // Format: [longitude, latitude]
-      required: true,
-    }
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], required: true },
   },
   posterImage: { type: String },
   startTime: { type: Date, required: true },
@@ -41,6 +30,12 @@ const ConcertSchema = new mongoose.Schema({
     tier: { type: String, required: true },
     amountAvailable: { type: Number, required: true },
     pricePerTicket: { type: Number, required: true }
+  }],
+  seats: [{
+    seatNumber: { type: String, required: true },
+    zone: { type: String, required: true },
+    isBought: { type: Boolean, default: false },
+    ticketNumber: { type: String, ref: 'Ticket' }
   }],
   soldTickets: [{
     tier: { type: String, required: true },
@@ -58,12 +53,10 @@ ConcertSchema.index({ isDeleted: 1 });
 ConcertSchema.index({ name: 'text', performers: 'text', sponsors: 'text' });
 ConcertSchema.index({ address: '2dsphere' });
 
-
 ConcertSchema.pre('save', async function (next) {
   if (!this.concertUUID) {
     this.concertUUID = generateConcertUUID(this.date);
   }
-  // Only create and link an Event for new Concert documents
   if (this.isNew && !this.eventReference) {
     try {
       const event = await Event.create({
@@ -79,6 +72,5 @@ ConcertSchema.pre('save', async function (next) {
   }
   next();
 });
-
 
 module.exports = mongoose.model('Concert', ConcertSchema);

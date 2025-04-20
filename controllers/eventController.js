@@ -149,7 +149,8 @@ exports.getEventDetails = async (req, res) => {
             return res.status(404).json({ message: 'Linked event details not found' });
         }
         const formattedDetails = formatEventDetails(event.type, eventDetails);
-        return res.status(200).json({ eventDetails: formattedDetails });
+        return res.status(200).json({ eventDetails: { ...formattedDetails, type: event.type } });
+
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }

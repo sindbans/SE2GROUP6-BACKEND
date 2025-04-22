@@ -1,6 +1,6 @@
 // models/Customer.js
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 function generateShortUUID() {
   return Math.random().toString(36).substring(2, 11).toUpperCase();

@@ -38,26 +38,31 @@ passport.use(new GoogleStrategy({
     try {
         const email = profile.emails[0].value;
 
-        // Check if user already exists (Google or manual)
         let user = await Customer.findOne({ email });
 
         if (!user) {
-            // Create new user with Google info
             user = new Customer({
                 firstName: profile.given_name || "Google",
                 lastName: profile.family_name || "User",
                 email: email,
-                password: crypto.randomBytes(16).toString("hex"), // dummy password
+                password: crypto.randomBytes(16).toString("hex"),
                 profileImage: profile.photos[0].value,
             });
             await user.save();
         }
 
-        return done(null, user);
+        // Return a custom object with fields your frontend expects
+        return done(null, {
+            displayName: `${user.firstName} ${user.lastName}`,
+            googleId: user.uid, // you could save profile.id to db if needed
+            email: user.email
+        });
+
     } catch (err) {
         return done(err, null);
     }
 }));
+
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));

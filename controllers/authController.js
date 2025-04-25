@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const Customer = require('../models/Customer');
 const jwt = require('jsonwebtoken');
 
-// Email Transporter
+// // Email Transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -60,33 +60,37 @@ exports.login = async (req, res) => {
 };
 
 // Google Callback Handler
-// Google Callback Handler
 exports.googleCallback = async (req, res) => {
     try {
-        const googleUser = req.user;               // set by passport
-        const name = googleUser.displayName;
-        res.redirect(
-            `http://localhost:5173/home?token=${token}&name=${encodeURIComponent(name)}`
-        );
+        const googleUser = req.user;
+        console.log("Google User:", googleUser); // debug log
 
-        const payload = {uid: googleUser.googleId, email: googleUser.email};
+        if (!googleUser || !googleUser.displayName || !googleUser.googleId) {
+            throw new Error("Missing required fields");
+        }
+
+        const payload = {
+            uid: googleUser.googleId,
+            email: googleUser.email,
+        };
+
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         const redirectUrl =
-            `http://localhost:5173/home?token=${token}` +
-            `&name= ${ encodeURIComponent(googleUser.displayName)}`  ; +
-            `&uid= ${ googleUser.googleId}`  ;
-         res.redirect(redirectUrl);
+            `http://localhost:5173/?token=${token}` +
+            `&name=${encodeURIComponent(googleUser.displayName)}` +
+            `&uid=${googleUser.googleId}`;
 
-
+        res.redirect(redirectUrl);
     } catch (err) {
-        console.error('[googleCallback] Error:', err);
-        res.redirect('http://localhost:5173/login');
+        console.error('[googleCallback] Error:', err.message);
+        res.redirect('http://localhost:5173/auth/login');
     }
 };
 
 
-// Password Reset
+
+//Password Reset
 exports.requestPasswordReset = async (req, res) => {
     try {
         const { email } = req.body;

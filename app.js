@@ -1,0 +1,111 @@
+// app.js
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth2').Strategy;
+const movieRoutes = require('./routes/movieRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
+
+// Models
+const Customer = require('./models/Customer');
+
+// App init
+const app = express();
+
+// Middleware
+app.use(cors({
+    origin: ["http://localhost:5173"],
+    credentials: true
+}));
+app.use(express.json());
+app.use('/api/movies', movieRoutes);
+
+
+// Express-session setup
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'hermes_secret',
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport Google OAuth Strategy using CustomerSchema
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "/api/auth/google/callback"
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        const email = profile.emails[0].value;
+
+        // Check if user already exists (Google or manual)
+        let user = await Customer.findOne({ email });
+
+        if (!user) {
+            // Create new user with Google info
+            user = new Customer({
+                firstName: profile.given_name || "Google",
+                lastName: profile.family_name || "User",
+                email: email,
+                password: crypto.randomBytes(16).toString("hex"), // dummy password
+                profileImage: profile.photos[0].value,
+            });
+            await user.save();
+        }
+
+        return done(null, user);
+    } catch (err) {
+        return done(err, null);
+    }
+}));
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch(err => {
+        console.error('❌ MongoDB connection error:', err);
+        process.exit(1);
+    });
+
+
+// Routes
+const eventRoutes = require('./routes/eventRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
+const filterRoutes = require('./routes/filterRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const locationRoutes = require('./routes/locationRoutes');
+const seatRoutes = require('./routes/seatRoutes');
+const authRoutes = require('./routes/authRoutes');
+const managementAuthRoutes = require('./routes/managementRoutes');
+const employeeAuthRoutes = require('./routes/employeeRoutes');
+const crypto = require('crypto');
+
+app.use('/api/events', eventRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/promotions', promotionRoutes);
+app.use('/api/filter', filterRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/seats', seatRoutes);
+app.use('/api/auth', authRoutes); // now includes Google + manual auth
+app.use('/api/management', managementAuthRoutes);
+app.use('/api/employee', employeeAuthRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+module.exports = app;

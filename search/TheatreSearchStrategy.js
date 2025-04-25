@@ -1,0 +1,38 @@
+// TheatreSearchStrategy.js
+const Theatre = require('../models/TheatreSchema');
+const ISearchStrategy = require('./ISearchStrategy');
+const { parseCoordinates } = require('../utils/geoUtils');
+
+class TheatreSearchStrategy extends ISearchStrategy {
+    async search(searchTerm, uid, companyId) {
+        const coordinates = parseCoordinates(searchTerm);
+        if (coordinates) {
+            const geoQuery = {
+                address: {
+                    $near: {
+                        $geometry: { type: 'Point', coordinates },
+                        $maxDistance: 5000
+                    }
+                }
+            };
+            return await Theatre.find(geoQuery).sort({ createdAt: -1 });
+        }
+        let dateQuery = null;
+        const parsedDate = new Date(searchTerm);
+        if (!isNaN(parsedDate)) {
+            dateQuery = parsedDate;
+        }
+        const query = {
+            $or: [
+                { name: { $regex: searchTerm, $options: 'i' } },
+                { genre: { $regex: searchTerm, $options: 'i' } },
+                { director: { $regex: searchTerm, $options: 'i' } },
+                { cast: { $elemMatch: { $regex: searchTerm, $options: 'i' } } },
+                ...(dateQuery ? [{ date: dateQuery }] : [])
+            ]
+        };
+        return await Theatre.find(query).sort({ createdAt: -1 });
+    }
+}
+
+module.exports = TheatreSearchStrategy;

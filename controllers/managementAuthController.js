@@ -2,7 +2,7 @@
 
 const bcrypt = require('bcryptjs');
 // Import the common authentication utilities (e.g. generateToken)
-const AuthController = require('./authcontroller');
+const AuthController = require('./authController');
 // Import the Management model
 const Management = require('../models/Management');
 

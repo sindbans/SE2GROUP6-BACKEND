@@ -15,7 +15,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ["http://localhost:5173"],
+    origin: ["https://beamish-baklava-7a2363.netlify.app"],
     credentials: true
 }));
 app.use(express.json());

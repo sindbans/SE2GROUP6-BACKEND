@@ -13,7 +13,7 @@ router.post('/login', authController.login);
 // Google Auth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', passport.authenticate('google', {
-    failureRedirect: 'http://localhost:5173/login'
+    failureRedirect: 'https://beamish-baklava-7a2363.netlify.app/login'
 }), authController.googleCallback);
 
 module.exports = router;

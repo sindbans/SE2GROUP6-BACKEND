@@ -1,5 +1,5 @@
 // services/bookingService.js
-const BookingStrategyFactory = require('../bookingStrategies/BookingStrategyFactory');
+const BookingStrategyFactory = require('../BookingStrategies/BookingStrategyFactory');
 
 /**
  * bookTicket selects the proper booking strategy based on eventType and delegates the booking.

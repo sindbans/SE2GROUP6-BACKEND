@@ -77,14 +77,14 @@ exports.googleCallback = async (req, res) => {
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
         const redirectUrl =
-            `http://localhost:5173/?token=${token}` +
+            `https://beamish-baklava-7a2363.netlify.app/?token=${token}` +
             `&name=${encodeURIComponent(googleUser.displayName)}` +
             `&uid=${googleUser.googleId}`;
 
         res.redirect(redirectUrl);
     } catch (err) {
         console.error('[googleCallback] Error:', err.message);
-        res.redirect('http://localhost:5173/auth/login');
+        res.redirect('https://beamish-baklava-7a2363.netlify.app/auth/login');
     }
 };
 
@@ -102,7 +102,7 @@ exports.requestPasswordReset = async (req, res) => {
         customer.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
         await customer.save();
 
-        const resetLink = `http://localhost:5173/reset?token=${resetToken}`;
+        const resetLink = `https://beamish-baklava-7a2363.netlify.app/reset?token=${resetToken}`;
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
